@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CustomCodeFramework.Core" Version="0.2.0" />
     <PackageReference Include="CustomCodeFramework.Messaging" Version="0.2.0" />
@@ -19,8 +15,5 @@
     <ProjectReference Include="..\Dhole.Content.Persistence\Dhole.Content.Persistence.csproj" />
     <ProjectReference Include="..\Dhole.Content.Contracts\Dhole.Content.Contracts.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="appsettings.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="appsettings.Development.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
-  </ItemGroup>
+  <ItemGroup><None Update="appsettings.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None><None Update="appsettings.Development.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None></ItemGroup>
 </Project>
