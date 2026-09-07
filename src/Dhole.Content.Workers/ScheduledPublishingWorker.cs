@@ -1,33 +1,16 @@
+using CustomCodeFramework.Core.Abstractions;
+using CustomCodeFramework.Workers.Abstractions;
 using Dhole.Content.Application.Services;
 
 namespace Dhole.Content.Workers;
 
-public sealed class ScheduledPublishingWorker(
-    IServiceScopeFactory scopeFactory,
-    ILogger<ScheduledPublishingWorker> logger) : BackgroundService
+internal sealed class ScheduledPublishingWorker(ContentApplicationService service, IDateTimeProvider clock, ILogger<ScheduledPublishingWorker> logger) : IBackgroundWorker
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                using var scope = scopeFactory.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<ContentApplicationService>();
-                await service.PublishDueAsync(DateTime.UtcNow, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error publicando contenido programado.");
-            }
+    public string Name => "content.scheduled-publishing";
 
-            if (!await timer.WaitForNextTickAsync(stoppingToken))
-                break;
-        }
+    public async Task ExecuteAsync(IWorkerExecutionContext context, CancellationToken cancellationToken)
+    {
+        await service.PublishDueAsync(clock.UtcNow, cancellationToken);
+        logger.LogDebug("Scheduled publishing background task completed at {ExecutedAtUtc}.", clock.UtcNow);
     }
 }

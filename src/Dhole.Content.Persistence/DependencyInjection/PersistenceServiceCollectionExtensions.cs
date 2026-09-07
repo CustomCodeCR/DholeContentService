@@ -1,6 +1,8 @@
 using CustomCodeFramework.Postgres.DependencyInjection;
 using CustomCodeFramework.Postgres.EntityFramework.DependencyInjection;
 using Dhole.Content.Application.Abstractions;
+using Dhole.Content.Application.Abstractions.Auditing;
+using Dhole.Content.Persistence.Auditing;
 using Dhole.Content.Persistence.DbContexts;
 using Dhole.Content.Persistence.Messaging;
 using Dhole.Content.Persistence.Repositories;
@@ -17,6 +19,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddCustomCodePostgresEntityFramework<ServiceDbContext>();
         services.AddScoped<IContentRepository, ContentRepository>();
         services.AddScoped<IContentEventPublisher, ContentEventPublisher>();
+        services.AddScoped<IContentAuditService, ContentAuditService>();
         return services;
     }
 }

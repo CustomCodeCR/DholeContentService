@@ -40,5 +40,5 @@ public interface IContentCache
 
 public interface IContentEventPublisher
 {
-    Task QueuePublishedAsync(ContentItem item, Guid? actorUserId, CancellationToken cancellationToken);
+    Task QueueAsync(ContentItem item, string eventName, Guid? actorUserId, CancellationToken cancellationToken);
 }

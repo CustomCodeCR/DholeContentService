@@ -1,8 +1,11 @@
 using CustomCodeFramework.Api.DependencyInjection;
 using CustomCodeFramework.Api.Swagger;
+using CustomCodeFramework.Core.Abstractions;
 using Dhole.Content.Api.Endpoints;
+using Dhole.Content.Api.Middleware;
 using Dhole.Content.Application.DependencyInjection;
 using Dhole.Content.Infrastructure.DependencyInjection;
+using Dhole.Content.Infrastructure.Time;
 using Dhole.Content.Persistence.DbContexts;
 using Dhole.Content.Persistence.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -11,26 +14,24 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicyName = "DholeContentCors";
 var httpPort = int.TryParse(builder.Configuration["Http:Port"], out var configuredPort) && configuredPort > 0 ? configuredPort : 5210;
-
 builder.WebHost.UseUrls($"http://0.0.0.0:{httpPort}");
 
+builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddCustomCodeApiWithSwagger(title: "Dhole Content Service", version: "v1");
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyName, policy =>
     {
         var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-        if (origins is { Length: > 0 })
-            policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
-        else
-            policy.WithOrigins(
+        if (origins is { Length: > 0 }) policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+        else policy.WithOrigins(
                 "https://dhole.customcodecr.com",
                 "https://sistema.logisticacastrofallas.com",
                 "https://logisticacastrofallas.com",
                 "https://www.logisticacastrofallas.com",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173")
-                .AllowAnyHeader().AllowAnyMethod();
+            .AllowAnyHeader().AllowAnyMethod();
     });
 });
 
@@ -44,12 +45,9 @@ builder.Services.AddHttpClient("DholeStorage", client =>
 });
 
 var app = builder.Build();
-
 app.UseCustomCodeApi();
 app.UseCors(CorsPolicyName);
-
-if (app.Environment.IsDevelopment())
-    app.UseCustomCodeSwagger();
+if (app.Environment.IsDevelopment()) app.UseCustomCodeSwagger();
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -60,7 +58,9 @@ app.MapGet("/health", () => Results.Ok(new
 })).AllowAnonymous();
 
 app.UseAuthentication();
+app.UseMiddleware<AuditExecutionContextMiddleware>();
 app.UseAuthorization();
+app.UseMiddleware<AuditEndpointMiddleware>();
 
 app.MapPublicContentEndpoints();
 app.MapContentEndpoints();

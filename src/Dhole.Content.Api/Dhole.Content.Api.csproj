@@ -9,6 +9,7 @@
     <PackageReference Include="CustomCodeFramework.Auth" Version="0.2.0" />
     <PackageReference Include="CustomCodeFramework.Cqrs" Version="0.2.0" />
     <PackageReference Include="CustomCodeFramework.Core" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Messaging" Version="0.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

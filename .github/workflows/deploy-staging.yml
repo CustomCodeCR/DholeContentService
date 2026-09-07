@@ -1,0 +1,70 @@
+name: Deploy Dhole Content - Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: dhole-content-staging
+  cancel-in-progress: false
+
+env:
+  COMPOSE_FILE: .dhole-system/deploy/docker-compose.services.yml
+  COMPOSE_OVERRIDE: .dhole-system/deploy/docker-compose.staging.yml
+  DHOLE_IMAGE_TAG: staging
+  DHOLE_NETWORK: dhole-staging
+  COMPOSE_PROJECT: dhole-staging
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64, dhole]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load Dhole deployment infrastructure
+        run: |
+          set -euo pipefail
+          rm -rf .dhole-system
+          git clone --depth 1 --branch master https://github.com/CustomCodeCR/DholeSystem.git .dhole-system
+          mkdir -p "$RUNNER_TEMP/dhole-env"
+          bash .dhole-system/deploy/prepare-environments.sh /opt/dhole/.env "$RUNNER_TEMP/dhole-env"
+          echo "DHOLE_ENV_FILE=$RUNNER_TEMP/dhole-env/.env.staging" >> "$GITHUB_ENV"
+      - name: Verify staging server
+        run: |
+          set -euo pipefail
+          command -v curl >/dev/null
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" config -q
+      - name: Build images
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CUSTOMCODE_NUGET_TOKEN: ${{ secrets.CUSTOMCODE_NUGET_TOKEN }}
+        run: |
+          set -euo pipefail
+          export PACKAGE_TOKEN="${CUSTOMCODE_NUGET_TOKEN:-$GITHUB_TOKEN}"
+          SHA_TAG="${GITHUB_SHA::12}"
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=PACKAGE_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/content-api:staging -t "dhole/content-api:staging-$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=PACKAGE_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/content-workers:staging -t "dhole/content-workers:staging-$SHA_TAG" .
+      - name: Deploy Content staging
+        run: |
+          set -euo pipefail
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never content-api content-workers
+      - name: Verify Content API health
+        run: |
+          set -euo pipefail
+          CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" ps -q content-api)"
+          test -n "$CONTAINER_ID"
+          for attempt in $(seq 1 30); do
+            if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID" 2>/dev/null || true)" != "true" ]; then docker logs --tail 200 "$CONTAINER_ID" || true; exit 1; fi
+            CONTENT_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER_ID")"
+            if [ -n "$CONTENT_IP" ] && curl -fsS --max-time 2 "http://${CONTENT_IP}:8080/health" >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs --tail 200 "$CONTAINER_ID" || true
+          exit 1
+      - name: Cleanup old images
+        if: always()
+        run: docker image prune -f

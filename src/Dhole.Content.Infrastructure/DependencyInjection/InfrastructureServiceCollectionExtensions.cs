@@ -1,7 +1,10 @@
 using CustomCodeFramework.Auth.DependencyInjection;
+using CustomCodeFramework.Mongo.DependencyInjection;
 using CustomCodeFramework.Redis.DependencyInjection;
 using Dhole.Content.Application.Abstractions;
+using Dhole.Content.Application.Abstractions.Mongo;
 using Dhole.Content.Infrastructure.Cache;
+using Dhole.Content.Infrastructure.Mongo;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +28,9 @@ public static class InfrastructureServiceCollectionExtensions
         }
 
         services.AddCustomCodeRedis(configuration);
+        services.AddCustomCodeMongo(configuration);
         services.AddScoped<IContentCache, ContentCache>();
+        services.AddScoped<IContentChangeSnapshotWriter, ContentChangeSnapshotWriter>();
         return services;
     }
 }

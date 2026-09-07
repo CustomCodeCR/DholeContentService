@@ -1,21 +1,36 @@
+# syntax=docker/dockerfile:1
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+RUN apt-get update && apt-get install -y tzdata apt-utils libgdiplus libc6-dev libgssapi-krb5-2 && ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-EXPOSE 5210
+EXPOSE 8080
+ENV TZ=America/Costa_Rica
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BUILD_CONFIGURATION=Release
+ARG GITHUB_ACTOR=github-actions
 WORKDIR /src
-COPY ["NuGet.Config", "."]
+COPY ["NuGet.Config", "./NuGet.Config"]
 COPY ["src/Dhole.Content.Api/Dhole.Content.Api.csproj", "src/Dhole.Content.Api/"]
 COPY ["src/Dhole.Content.Application/Dhole.Content.Application.csproj", "src/Dhole.Content.Application/"]
-COPY ["src/Dhole.Content.Contracts/Dhole.Content.Contracts.csproj", "src/Dhole.Content.Contracts/"]
 COPY ["src/Dhole.Content.Domain/Dhole.Content.Domain.csproj", "src/Dhole.Content.Domain/"]
-COPY ["src/Dhole.Content.Infrastructure/Dhole.Content.Infrastructure.csproj", "src/Dhole.Content.Infrastructure/"]
 COPY ["src/Dhole.Content.Persistence/Dhole.Content.Persistence.csproj", "src/Dhole.Content.Persistence/"]
-RUN dotnet restore "src/Dhole.Content.Api/Dhole.Content.Api.csproj"
+COPY ["src/Dhole.Content.Infrastructure/Dhole.Content.Infrastructure.csproj", "src/Dhole.Content.Infrastructure/"]
+COPY ["src/Dhole.Content.Contracts/Dhole.Content.Contracts.csproj", "src/Dhole.Content.Contracts/"]
+RUN --mount=type=secret,id=github_token,required=true \
+  export NuGetPackageSourceCredentials_github="Username=${GITHUB_ACTOR};Password=$(cat /run/secrets/github_token);ValidAuthenticationTypes=Basic" && \
+  dotnet restore "src/Dhole.Content.Api/Dhole.Content.Api.csproj" --configfile /src/NuGet.Config
 COPY . .
-RUN dotnet publish "src/Dhole.Content.Api/Dhole.Content.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/src/Dhole.Content.Api"
+RUN dotnet build "Dhole.Content.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src/src/Dhole.Content.Api
+RUN dotnet publish "Dhole.Content.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish --no-restore /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
-COPY --from=build /app/publish .
+COPY --from=publish /app/publish .
+RUN chmod 755 /app
 ENTRYPOINT ["dotnet", "Dhole.Content.Api.dll"]
