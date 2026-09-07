@@ -40,12 +40,14 @@ CREATE TABLE content.content_items (
     scheduled_at_utc timestamptz,
     published_at_utc timestamptz,
     created_at_utc timestamptz NOT NULL,
-    updated_at_utc timestamptz NOT NULL,
+    created_by text,
+    updated_at_utc timestamptz,
+    updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
     deleted_at_utc timestamptz,
-    created_by uuid,
-    updated_by uuid
+    deleted_by text
 );
-CREATE UNIQUE INDEX ux_content_items_site_slug ON content.content_items(site_key, slug) WHERE deleted_at_utc IS NULL;
+CREATE UNIQUE INDEX ux_content_items_site_slug ON content.content_items(site_key, slug) WHERE is_deleted = false;
 CREATE INDEX ix_content_items_public ON content.content_items(site_key, type, status, published_at_utc DESC);
 
 CREATE TABLE content.content_revisions (
@@ -80,9 +82,16 @@ CREATE TABLE content.taxonomy_terms (
     description varchar(1200),
     parent_id uuid,
     sort_order integer NOT NULL DEFAULT 0,
-    created_at_utc timestamptz NOT NULL
+    created_at_utc timestamptz NOT NULL,
+    created_by text,
+    updated_at_utc timestamptz,
+    updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
+    deleted_at_utc timestamptz,
+    deleted_by text
 );
-CREATE UNIQUE INDEX ux_taxonomy_terms_slug ON content.taxonomy_terms(site_key, kind, slug);
+CREATE UNIQUE INDEX ux_taxonomy_terms_slug ON content.taxonomy_terms(site_key, kind, slug) WHERE is_deleted = false;
+CREATE INDEX ix_taxonomy_terms_order ON content.taxonomy_terms(site_key, kind, sort_order);
 
 CREATE TABLE content.content_taxonomies (
     content_id uuid NOT NULL REFERENCES content.content_items(id) ON DELETE CASCADE,
@@ -99,9 +108,14 @@ CREATE TABLE content.media_references (
     caption varchar(1200),
     metadata_json jsonb,
     created_at_utc timestamptz NOT NULL,
-    created_by uuid
+    created_by text,
+    updated_at_utc timestamptz,
+    updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
+    deleted_at_utc timestamptz,
+    deleted_by text
 );
-CREATE UNIQUE INDEX ux_media_references_storage ON content.media_references(storage_file_id);
+CREATE UNIQUE INDEX ux_media_references_storage ON content.media_references(storage_file_id) WHERE is_deleted = false;
 
 CREATE TABLE content.navigation_menus (
     id uuid PRIMARY KEY,
@@ -109,9 +123,15 @@ CREATE TABLE content.navigation_menus (
     name varchar(200) NOT NULL,
     location varchar(100) NOT NULL,
     is_active boolean NOT NULL DEFAULT true,
-    updated_at_utc timestamptz NOT NULL
+    created_at_utc timestamptz NOT NULL,
+    created_by text,
+    updated_at_utc timestamptz,
+    updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
+    deleted_at_utc timestamptz,
+    deleted_by text
 );
-CREATE UNIQUE INDEX ux_navigation_menus_location ON content.navigation_menus(site_key, location);
+CREATE UNIQUE INDEX ux_navigation_menus_location ON content.navigation_menus(site_key, location) WHERE is_deleted = false;
 
 CREATE TABLE content.navigation_menu_items (
     id uuid PRIMARY KEY,
@@ -132,10 +152,15 @@ CREATE TABLE content.site_settings (
     key varchar(200) NOT NULL,
     value_json jsonb NOT NULL,
     is_public boolean NOT NULL DEFAULT false,
-    updated_at_utc timestamptz NOT NULL,
-    updated_by uuid
+    created_at_utc timestamptz NOT NULL,
+    created_by text,
+    updated_at_utc timestamptz,
+    updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
+    deleted_at_utc timestamptz,
+    deleted_by text
 );
-CREATE UNIQUE INDEX ux_site_settings_key ON content.site_settings(site_key, key);
+CREATE UNIQUE INDEX ux_site_settings_key ON content.site_settings(site_key, key) WHERE is_deleted = false;
 
 CREATE TABLE content.inbox_messages (
     id uuid PRIMARY KEY,
