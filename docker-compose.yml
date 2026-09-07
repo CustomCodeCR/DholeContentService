@@ -1,5 +1,5 @@
 services:
-  dhole-content:
+  content-api:
     build:
       context: .
       dockerfile: src/Dhole.Content.Api/Dockerfile
@@ -13,7 +13,7 @@ services:
     ports:
       - "5210:5210"
 
-  dhole-content-workers:
+  content-workers:
     build:
       context: .
       dockerfile: src/Dhole.Content.Workers/Dockerfile
@@ -21,4 +21,4 @@ services:
       ConnectionStrings__Postgres: ${CONTENT_POSTGRES_CONNECTION}
       Redis__ConnectionString: ${REDIS_CONNECTION}
     depends_on:
-      - dhole-content
+      - content-api
