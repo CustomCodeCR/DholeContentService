@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.ContentItems.ArchiveContent;public sealed record ArchiveContentCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;

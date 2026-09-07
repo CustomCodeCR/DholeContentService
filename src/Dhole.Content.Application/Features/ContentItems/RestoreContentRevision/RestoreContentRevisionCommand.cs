@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.ContentItems.RestoreContentRevision;public sealed record RestoreContentRevisionCommand(Guid ContentId,Guid RevisionId,string? Reason,Guid? ActorUserId):ICommand<Result>;

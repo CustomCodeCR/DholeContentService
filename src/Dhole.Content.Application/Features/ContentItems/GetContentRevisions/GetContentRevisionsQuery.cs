@@ -1,0 +1,1 @@
+using CustomCodeFramework.Cqrs.Queries;using Dhole.Content.Contracts.ContentItems;namespace Dhole.Content.Application.ContentItems.GetContentRevisions;public sealed record GetContentRevisionsQuery(Guid ContentId):IQuery<IReadOnlyCollection<ContentRevisionDto>>;

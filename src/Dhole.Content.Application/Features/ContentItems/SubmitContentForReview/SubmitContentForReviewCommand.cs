@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.ContentItems.SubmitContentForReview;public sealed record SubmitContentForReviewCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;

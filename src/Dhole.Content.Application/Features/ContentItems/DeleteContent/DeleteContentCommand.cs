@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.ContentItems.DeleteContent;public sealed record DeleteContentCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;
