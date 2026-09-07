@@ -1,0 +1,13 @@
+syntax = "proto3";
+option csharp_namespace = "Dhole.Content.Contracts.Grpc";
+package dhole.content;
+
+service ContentQuery {
+  rpc GetPublishedBySlug (GetPublishedBySlugRequest) returns (PublishedContentReply);
+  rpc GetMenu (GetMenuRequest) returns (MenuReply);
+}
+message GetPublishedBySlugRequest { string site_key = 1; string slug = 2; string locale = 3; }
+message PublishedContentReply { bool found = 1; string id = 2; string type = 3; string title = 4; string slug = 5; string excerpt = 6; string blocks_json = 7; string rendered_html = 8; string locale = 9; string published_at_utc = 10; }
+message GetMenuRequest { string site_key = 1; string location = 2; }
+message MenuItemReply { string id = 1; string parent_id = 2; string label = 3; string url = 4; string content_id = 5; string target = 6; int32 sort_order = 7; }
+message MenuReply { bool found = 1; string id = 2; string name = 3; string location = 4; repeated MenuItemReply items = 5; }
