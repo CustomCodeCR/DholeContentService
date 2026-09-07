@@ -44,16 +44,16 @@ jobs:
         run: |
           set -euo pipefail
           SHA_TAG="${GITHUB_SHA::12}"
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/content-api:staging -t "dhole/content-api:staging-$SHA_TAG" .
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/content-workers:staging -t "dhole/content-workers:staging-$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/dhole-content:staging -t "dhole/dhole-content:staging-$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/dhole-content-workers:staging -t "dhole/dhole-content-workers:staging-$SHA_TAG" .
       - name: Deploy Content staging
         run: |
           set -euo pipefail
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never content-api content-workers
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never dhole-content dhole-content-workers
       - name: Verify Content API health
         run: |
           set -euo pipefail
-          CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" ps -q content-api)"
+          CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" ps -q dhole-content)"
           test -n "$CONTAINER_ID"
           for attempt in $(seq 1 30); do
             if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID" 2>/dev/null || true)" != "true" ]; then docker logs --tail 200 "$CONTAINER_ID" || true; exit 1; fi
