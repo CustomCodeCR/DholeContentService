@@ -1,0 +1,24 @@
+services:
+  dhole-content:
+    build:
+      context: .
+      dockerfile: src/Dhole.Content.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Http__Port: 5210
+      ConnectionStrings__Postgres: ${CONTENT_POSTGRES_CONNECTION}
+      Redis__ConnectionString: ${REDIS_CONNECTION}
+      Auth__Jwt__SecretKey: ${AUTH_JWT_SECRET}
+      Services__Storage__BaseUrl: ${STORAGE_BASE_URL:-http://dhole-storage:5207/}
+    ports:
+      - "5210:5210"
+
+  dhole-content-workers:
+    build:
+      context: .
+      dockerfile: src/Dhole.Content.Workers/Dockerfile
+    environment:
+      ConnectionStrings__Postgres: ${CONTENT_POSTGRES_CONNECTION}
+      Redis__ConnectionString: ${REDIS_CONNECTION}
+    depends_on:
+      - dhole-content
