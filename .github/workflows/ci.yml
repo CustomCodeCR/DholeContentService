@@ -21,11 +21,9 @@ jobs:
       - name: Restore
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CUSTOMCODE_NUGET_TOKEN: ${{ secrets.CUSTOMCODE_NUGET_TOKEN }}
         run: |
           set -euo pipefail
-          TOKEN="${CUSTOMCODE_NUGET_TOKEN:-$GITHUB_TOKEN}"
-          export NuGetPackageSourceCredentials_github="Username=${GITHUB_ACTOR};Password=${TOKEN};ValidAuthenticationTypes=Basic"
+          export NuGetPackageSourceCredentials_github="Username=${GITHUB_ACTOR};Password=${GITHUB_TOKEN};ValidAuthenticationTypes=Basic"
           dotnet restore DholeContentService.slnx --configfile NuGet.Config
       - name: Build
         run: dotnet build DholeContentService.slnx -c Release --no-restore
