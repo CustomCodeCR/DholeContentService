@@ -1,25 +1,4 @@
-using CustomCodeFramework.Postgres.DependencyInjection;
-using CustomCodeFramework.Postgres.EntityFramework.DependencyInjection;
-using Dhole.Content.Application.Abstractions;
-using Dhole.Content.Application.Abstractions.Auditing;
-using Dhole.Content.Persistence.Auditing;
-using Dhole.Content.Persistence.DbContexts;
-using Dhole.Content.Persistence.Messaging;
-using Dhole.Content.Persistence.Repositories;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
+using CustomCodeFramework.Postgres.DependencyInjection;using CustomCodeFramework.Postgres.EntityFramework.DependencyInjection;using Dhole.Content.Application.Abstractions.Auditing;using Dhole.Content.Application.Abstractions.Messaging;using Dhole.Content.Application.Abstractions.Repositories;using Dhole.Content.Persistence.Auditing;using Dhole.Content.Persistence.DbContexts;using Dhole.Content.Persistence.Messaging;using Dhole.Content.Persistence.Repositories;using Microsoft.Extensions.Configuration;using Microsoft.Extensions.DependencyInjection;
 namespace Dhole.Content.Persistence.DependencyInjection;
-
 public static class PersistenceServiceCollectionExtensions
-{
-    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddCustomCodePostgres(configuration);
-        services.AddCustomCodePostgresEntityFramework<ServiceDbContext>();
-        services.AddScoped<IContentRepository, ContentRepository>();
-        services.AddScoped<IContentEventPublisher, ContentEventPublisher>();
-        services.AddScoped<IContentAuditService, ContentAuditService>();
-        return services;
-    }
-}
+{public static IServiceCollection AddPersistence(this IServiceCollection services,IConfiguration configuration){services.AddCustomCodePostgres(configuration);services.AddCustomCodePostgresEntityFramework<ServiceDbContext>();services.AddScoped<IContentItemRepository,ContentItemRepository>();services.AddScoped<ITaxonomyTermRepository,TaxonomyTermRepository>();services.AddScoped<IMediaReferenceRepository,MediaReferenceRepository>();services.AddScoped<INavigationMenuRepository,NavigationMenuRepository>();services.AddScoped<ISiteSettingRepository,SiteSettingRepository>();services.AddScoped<IIntegrationEventOutboxWriter,IntegrationEventOutboxWriter>();services.AddScoped<IContentAuditService,ContentAuditService>();return services;}}
