@@ -1,0 +1,1 @@
+namespace Dhole.Content.Api.Authorization;internal static class ScopeAuthorizationExtensions{private const string Prefix="Scope:";public static TBuilder RequireScope<TBuilder>(this TBuilder builder,string scope)where TBuilder:IEndpointConventionBuilder{ArgumentException.ThrowIfNullOrWhiteSpace(scope);builder.RequireAuthorization($"{Prefix}{scope.Trim()}");return builder;}}

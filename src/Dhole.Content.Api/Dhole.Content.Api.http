@@ -1,0 +1,7 @@
+@host=http://localhost:8080
+GET {{host}}/health
+Accept: application/json
+
+###
+GET {{host}}/api/content/public/content?siteKey=main&pageNumber=1&pageSize=20
+Accept: application/json
