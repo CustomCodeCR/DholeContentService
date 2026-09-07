@@ -10,7 +10,7 @@ permissions:
   packages: read
 
 concurrency:
-  group: dhole-content-production
+  group: content-api-production
   cancel-in-progress: false
 
 env:
@@ -43,20 +43,20 @@ jobs:
         run: |
           set -euo pipefail
           SHA_TAG="${GITHUB_SHA::12}"
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/dhole-content:latest -t "dhole/dhole-content:$SHA_TAG" .
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/dhole-content-workers:latest -t "dhole/dhole-content-workers:$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/content-api:latest -t "dhole/content-api:$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/content-workers:latest -t "dhole/content-workers:$SHA_TAG" .
       - name: Deploy Content
         run: |
           set -euo pipefail
-          CONTENT_SERVICE="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" config --services | grep -E "(^|-)content(-|$)" | head -1)"
-          test -n "$CONTENT_SERVICE"
-          echo "CONTENT_SERVICE=$CONTENT_SERVICE" >> "$GITHUB_ENV"
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never "$CONTENT_SERVICE"
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps "$CONTENT_SERVICE"
+          CONTENT_API_SERVICE="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" config --services | grep -E "(^|-)content(-|$)" | head -1)"
+          test -n "$CONTENT_API_SERVICE"
+          echo "CONTENT_API_SERVICE=$CONTENT_SERVICE" >> "$GITHUB_ENV"
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never "$CONTENT_API_SERVICE" "$CONTENT_WORKERS_SERVICE"
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps "$CONTENT_API_SERVICE"
       - name: Verify Content API health
         run: |
           set -euo pipefail
-          CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps -q "$CONTENT_SERVICE")"
+          CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps -q "$CONTENT_API_SERVICE")"
           test -n "$CONTAINER_ID"
           for attempt in $(seq 1 90); do
             if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID" 2>/dev/null || true)" != "true" ]; then docker logs --tail 200 "$CONTAINER_ID" || true; exit 1; fi
