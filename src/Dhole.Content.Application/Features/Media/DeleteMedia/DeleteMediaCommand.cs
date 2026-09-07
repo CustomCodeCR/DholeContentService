@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Media.DeleteMedia;public sealed record DeleteMediaCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;

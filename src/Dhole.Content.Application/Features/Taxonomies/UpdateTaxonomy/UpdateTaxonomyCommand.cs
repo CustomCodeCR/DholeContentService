@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Taxonomies.UpdateTaxonomy;public sealed record UpdateTaxonomyCommand(Guid Id,string Name,string? Slug,string? Description,Guid? ParentId,int SortOrder,Guid? ActorUserId):ICommand<Result>;

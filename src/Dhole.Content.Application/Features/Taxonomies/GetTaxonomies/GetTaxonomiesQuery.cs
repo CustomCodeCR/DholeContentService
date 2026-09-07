@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Pagination;using CustomCodeFramework.Cqrs.Queries;using Dhole.Content.Contracts.Taxonomies;namespace Dhole.Content.Application.Taxonomies.GetTaxonomies;public sealed record GetTaxonomiesQuery(PageRequest Page,string? SiteKey,string? Kind,string? Search):IQuery<PagedResult<TaxonomyTermDto>>;

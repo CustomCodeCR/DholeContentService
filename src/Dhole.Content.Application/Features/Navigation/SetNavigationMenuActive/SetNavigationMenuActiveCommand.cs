@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Navigation.SetNavigationMenuActive;public sealed record SetNavigationMenuActiveCommand(Guid Id,bool IsActive,Guid? ActorUserId):ICommand<Result>;

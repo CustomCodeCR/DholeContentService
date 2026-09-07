@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Settings.UpsertSiteSetting;public sealed record UpsertSiteSettingCommand(string Key,string ValueJson,bool IsPublic,string? SiteKey,Guid? ActorUserId):ICommand<Result<Guid>>;

@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Taxonomies.CreateTaxonomy;public sealed record CreateTaxonomyCommand(string Kind,string Name,string? Slug,string? Description,Guid? ParentId,int SortOrder,string? SiteKey,Guid? ActorUserId):ICommand<Result<Guid>>;

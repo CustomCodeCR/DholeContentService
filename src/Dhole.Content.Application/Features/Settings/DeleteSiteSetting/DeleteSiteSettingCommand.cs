@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Settings.DeleteSiteSetting;public sealed record DeleteSiteSettingCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;

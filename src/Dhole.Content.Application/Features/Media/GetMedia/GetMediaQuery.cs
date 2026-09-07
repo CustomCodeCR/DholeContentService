@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Pagination;using CustomCodeFramework.Cqrs.Queries;using Dhole.Content.Contracts.Media;namespace Dhole.Content.Application.Media.GetMedia;public sealed record GetMediaQuery(PageRequest Page,string? Search,string? ContentType):IQuery<PagedResult<MediaDto>>;

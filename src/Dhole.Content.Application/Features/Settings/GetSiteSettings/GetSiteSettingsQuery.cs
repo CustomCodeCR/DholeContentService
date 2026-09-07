@@ -1,0 +1,1 @@
+using CustomCodeFramework.Cqrs.Queries;using Dhole.Content.Contracts.Settings;namespace Dhole.Content.Application.Settings.GetSiteSettings;public sealed record GetSiteSettingsQuery(string SiteKey,bool PublicOnly):IQuery<IReadOnlyCollection<SiteSettingDto>>;

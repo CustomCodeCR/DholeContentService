@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Queries;using Dhole.Content.Contracts.Navigation;namespace Dhole.Content.Application.Navigation.GetNavigationMenu;public sealed record GetNavigationMenuQuery(string SiteKey,string Location):IQuery<Result<NavigationMenuDto>>;

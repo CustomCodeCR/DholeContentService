@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Media.RegisterMedia;public sealed record RegisterMediaCommand(Guid StorageFileId,string FileName,string ContentType,string? AltText,string? Caption,string? MetadataJson,Guid? ActorUserId):ICommand<Result<Guid>>;

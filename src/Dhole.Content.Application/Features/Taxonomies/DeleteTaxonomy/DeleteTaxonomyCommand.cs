@@ -1,0 +1,1 @@
+using CustomCodeFramework.Core.Results;using CustomCodeFramework.Cqrs.Commands;namespace Dhole.Content.Application.Taxonomies.DeleteTaxonomy;public sealed record DeleteTaxonomyCommand(Guid Id,Guid? ActorUserId):ICommand<Result>;
