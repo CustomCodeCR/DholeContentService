@@ -49,10 +49,12 @@ jobs:
       - name: Deploy Content staging
         run: |
           set -euo pipefail
-          CONTENT_API_SERVICE="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" config --services | grep -E "(^|-)content(-|$)" | head -1)"
-          test -n "$CONTENT_API_SERVICE"
-          echo "CONTENT_API_SERVICE=$CONTENT_SERVICE" >> "$GITHUB_ENV"
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never "$CONTENT_API_SERVICE"
+          CONTENT_API_SERVICE="content-api"
+          CONTENT_WORKERS_SERVICE="content-workers"
+          echo "CONTENT_API_SERVICE=$CONTENT_API_SERVICE" >> "$GITHUB_ENV"
+          echo "CONTENT_WORKERS_SERVICE=$CONTENT_WORKERS_SERVICE" >> "$GITHUB_ENV"
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" config --services | grep -qx "$CONTENT_API_SERVICE"
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never "$CONTENT_API_SERVICE" "$CONTENT_WORKERS_SERVICE"
       - name: Verify Content API health
         run: |
           set -euo pipefail
