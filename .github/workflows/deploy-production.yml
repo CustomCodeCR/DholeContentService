@@ -50,6 +50,7 @@ jobs:
           set -euo pipefail
           CONTENT_SERVICE="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" config --services | grep -E "(^|-)content(-|$)" | head -1)"
           test -n "$CONTENT_SERVICE"
+          echo "CONTENT_SERVICE=$CONTENT_SERVICE" >> "$GITHUB_ENV"
           docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never "$CONTENT_SERVICE"
           docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps "$CONTENT_SERVICE"
       - name: Verify Content API health
