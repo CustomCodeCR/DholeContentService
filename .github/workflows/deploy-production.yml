@@ -40,13 +40,11 @@ jobs:
       - name: Build images
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CUSTOMCODE_NUGET_TOKEN: ${{ secrets.CUSTOMCODE_NUGET_TOKEN }}
         run: |
           set -euo pipefail
-          export PACKAGE_TOKEN="${CUSTOMCODE_NUGET_TOKEN:-$GITHUB_TOKEN}"
           SHA_TAG="${GITHUB_SHA::12}"
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=PACKAGE_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/content-api:latest -t "dhole/content-api:$SHA_TAG" .
-          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=PACKAGE_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/content-workers:latest -t "dhole/content-workers:$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Api/Dockerfile -t dhole/content-api:latest -t "dhole/content-api:$SHA_TAG" .
+          docker build --pull --build-arg GITHUB_ACTOR="$GITHUB_ACTOR" --secret id=github_token,env=GITHUB_TOKEN -f src/Dhole.Content.Workers/Dockerfile -t dhole/content-workers:latest -t "dhole/content-workers:$SHA_TAG" .
       - name: Deploy Content
         run: |
           set -euo pipefail
