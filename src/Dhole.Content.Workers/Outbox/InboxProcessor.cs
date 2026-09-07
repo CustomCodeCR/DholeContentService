@@ -1,1 +1,24 @@
-using CustomCodeFramework.Messaging.Inbox;using CustomCodeFramework.Messaging.Outbox.Processing;using Dhole.Content.Persistence.DbContexts;using Microsoft.EntityFrameworkCore;namespace Dhole.Content.Worker.Outbox;internal sealed class InboxProcessor(ServiceDbContext db):IInboxProcessor{public async Task<InboxCleanupResult> CleanupAsync(DateTime olderThanUtc,int batchSize,CancellationToken ct=default){var messages=await db.InboxMessages.Where(x=>x.Status==InboxMessageStatus.Processed&&x.ProcessedAtUtc!=null&&x.ProcessedAtUtc<olderThanUtc).OrderBy(x=>x.ProcessedAtUtc).Take(batchSize).ToListAsync(ct);if(messages.Count==0)return InboxCleanupResult.Empty;db.InboxMessages.RemoveRange(messages);await db.SaveChangesAsync(ct);var more=await db.InboxMessages.AnyAsync(x=>x.Status==InboxMessageStatus.Processed&&x.ProcessedAtUtc!=null&&x.ProcessedAtUtc<olderThanUtc,ct);return new InboxCleanupResult(messages.Count,more);}}
+namespace Dhole.Content.Api.Authorization;
+
+public static class ContentScopeNames
+{
+    public const string View = "cms.view";
+    public const string Create = "cms.create";
+    public const string Edit = "cms.edit";
+    public const string Delete = "cms.delete";
+    public const string Publish = "cms.publish";
+    public const string MediaUpload = "cms.media.upload";
+    public const string MediaDelete = "cms.media.delete";
+    public const string PagesEdit = "cms.pages.edit";
+    public const string NewsEdit = "cms.news.edit";
+    public const string BannersEdit = "cms.banners.edit";
+    public const string SeoEdit = "cms.seo.edit";
+    public const string SettingsEdit = "cms.settings.edit";
+
+    /// <summary>Complete scope contract exposed by the Content module.</summary>
+    public static IReadOnlyCollection<string> All =>
+    [
+        View, Create, Edit, Delete, Publish, MediaUpload, MediaDelete,
+        PagesEdit, NewsEdit, BannersEdit, SeoEdit, SettingsEdit,
+    ];
+}
