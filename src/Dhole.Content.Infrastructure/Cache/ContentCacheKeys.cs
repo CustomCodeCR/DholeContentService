@@ -1,8 +1,7 @@
 namespace Dhole.Content.Infrastructure.Cache;
-
-public static class ContentCacheKeys
+internal static class ContentCacheKeys
 {
-    public static string Content(string siteKey, string slug) => $"cms:{siteKey}:content:{slug}";
-    public static string Menu(string siteKey, string location) => $"cms:{siteKey}:menu:{location}";
-    public static string Settings(string siteKey) => $"cms:{siteKey}:settings";
+    public static string PublishedContent(string siteKey,string slug,string locale)=>$"cms:public:{siteKey}:{locale}:content:{slug}";
+    public static string Menu(string siteKey,string location)=>$"cms:public:{siteKey}:menu:{location}";
+    public static string Settings(string siteKey)=>$"cms:public:{siteKey}:settings";
 }
