@@ -58,7 +58,7 @@ jobs:
           set -euo pipefail
           CONTAINER_ID="$(docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" ps -q "$CONTENT_SERVICE")"
           test -n "$CONTAINER_ID"
-          for attempt in $(seq 1 30); do
+          for attempt in $(seq 1 90); do
             if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID" 2>/dev/null || true)" != "true" ]; then docker logs --tail 200 "$CONTAINER_ID" || true; exit 1; fi
             CONTENT_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER_ID")"
             if [ -n "$CONTENT_IP" ] && curl -fsS --max-time 2 "http://${CONTENT_IP}:8080/health" >/dev/null; then exit 0; fi
