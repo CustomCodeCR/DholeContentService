@@ -63,7 +63,7 @@ public static class EditorEndpoints
                     var page = PageRequest.Create(1, 1);
                     var resolvedSiteKey = string.IsNullOrWhiteSpace(siteKey) ? "main" : siteKey.Trim();
 
-                    async Task<int> CountAsync(ContentType? type = null, ContentStatus? status = null)
+                    async Task<long> CountAsync(ContentType? type = null, ContentStatus? status = null)
                     {
                         var result = await dispatcher.DispatchAsync(
                             new GetContentItemsQuery(
@@ -245,7 +245,7 @@ public static class EditorEndpoints
                             string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale,
                             request.SortOrder ?? 0,
                             request.IsFeatured ?? false,
-                            request.CategoryIds ?? [],
+                            request.CategoryIds,
                             seo?.Title,
                             seo?.Description,
                             seo?.Keywords,
