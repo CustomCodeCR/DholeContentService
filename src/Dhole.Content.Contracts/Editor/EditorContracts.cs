@@ -24,14 +24,14 @@ public sealed record EditorContentRequest(
 );
 
 public sealed record EditorDashboardDto(
-    int Pages,
-    int News,
-    int Banners,
-    int Media,
-    int Drafts,
-    int PendingReview,
-    int Scheduled,
-    int Published
+    long Pages,
+    long News,
+    long Banners,
+    long Media,
+    long Drafts,
+    long PendingReview,
+    long Scheduled,
+    long Published
 );
 
 public sealed record EditorOptionDto(string Value, string Label);
