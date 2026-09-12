@@ -4,6 +4,7 @@ using CustomCodeFramework.Persistence.Abstractions;
 using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Domain.Leads;
 using Dhole.Content.Domain.Leads.Entities;
 using Dhole.Content.Domain.Shared;
 
@@ -54,9 +55,6 @@ public sealed class CreateMarketingLeadCommandHandler(
     {
         var site = await sites.GetBySiteKeyAsync(command.SiteKey, cancellationToken);
         if (site is null || site.IsDeleted) return Result.Failure<Guid>(ContentErrors.SiteNotFound);
-        if (!string.IsNullOrWhiteSpace(command.Email) &&
-            await leads.ExistsByEmailAsync(command.SiteKey, command.Email, null, cancellationToken))
-            return Result.Failure<Guid>(ContentErrors.MarketingLeadEmailAlreadyExists);
 
         MarketingLead lead;
         try
@@ -69,6 +67,10 @@ public sealed class CreateMarketingLeadCommandHandler(
         {
             return Result.Failure<Guid>(ContentErrors.InvalidMarketingLeadData);
         }
+
+        if (lead.Email is not null &&
+            await leads.ExistsByEmailAsync(lead.SiteKey, lead.Email, null, cancellationToken))
+            return Result.Failure<Guid>(ContentErrors.MarketingLeadEmailAlreadyExists);
 
         await leads.AddAsync(lead, cancellationToken);
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingLeadCreated,
@@ -102,8 +104,21 @@ public sealed class UpdateMarketingLeadCommandHandler(
         if (lead is null || lead.IsDeleted) return Result.Failure(ContentErrors.MarketingLeadNotFound);
         var site = await sites.GetBySiteKeyAsync(command.SiteKey, cancellationToken);
         if (site is null || site.IsDeleted) return Result.Failure(ContentErrors.SiteNotFound);
-        if (!string.IsNullOrWhiteSpace(command.Email) &&
-            await leads.ExistsByEmailAsync(command.SiteKey, command.Email, command.Id, cancellationToken))
+
+        string normalizedSiteKey;
+        string? normalizedEmail;
+        try
+        {
+            normalizedSiteKey = MarketingLeadRules.NormalizeSiteKey(command.SiteKey);
+            normalizedEmail = MarketingLeadRules.NormalizeEmail(command.Email);
+        }
+        catch (ArgumentException)
+        {
+            return Result.Failure(ContentErrors.InvalidMarketingLeadData);
+        }
+
+        if (normalizedEmail is not null &&
+            await leads.ExistsByEmailAsync(normalizedSiteKey, normalizedEmail, command.Id, cancellationToken))
             return Result.Failure(ContentErrors.MarketingLeadEmailAlreadyExists);
 
         var before = CreateMarketingLeadCommandHandler.Snapshot(lead);
