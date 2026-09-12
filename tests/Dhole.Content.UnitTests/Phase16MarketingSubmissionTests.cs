@@ -20,7 +20,7 @@ public sealed class Phase16MarketingSubmissionTests
 
         Assert.NotNull(hash);
         Assert.Equal(64, hash!.Length);
-        Assert.DoesNotContain(rawIp, hash, StringComparison.Ordinal);
+        Assert.False(hash.Contains(rawIp, StringComparison.Ordinal));
         Assert.All(hash, character => Assert.True(Uri.IsHexDigit(character)));
     }
 
@@ -41,6 +41,12 @@ public sealed class Phase16MarketingSubmissionTests
     public void SubmissionRules_RejectsUnknownPayloadFields()
         => Assert.Throws<ArgumentException>(() => SubmissionRules.ValidateAndSanitizePayload(
             "{\"email\":\"cliente@example.com\",\"password\":\"secret\"}",
+            [("email", true)]));
+
+    [Fact]
+    public void SubmissionRules_RejectsMalformedJson()
+        => Assert.Throws<ArgumentException>(() => SubmissionRules.ValidateAndSanitizePayload(
+            "{\"email\":",
             [("email", true)]));
 
     [Theory]
