@@ -29,7 +29,7 @@ internal static class MarketingCampaignCommandValidation
         var content = await contentItems.GetByIdAsync(landingContentId.Value, cancellationToken);
         if (content is null || content.IsDeleted) return Result.Failure(ContentErrors.ContentNotFound);
         if (!string.Equals(content.SiteKey, siteKey.Trim().ToLowerInvariant(), StringComparison.Ordinal) || content.Type != ContentType.Page)
-            return Result.Failure(ContentErrors.InvalidMarketingCampaignData);
+            return Result.Failure(CampaignErrors.InvalidData);
         return Result.Success();
     }
 }
@@ -43,7 +43,7 @@ public sealed class CreateMarketingCampaignCommandHandler(ISiteRepository sites,
         var site = await sites.GetBySiteKeyAsync(command.SiteKey, cancellationToken);
         if (site is null || site.IsDeleted) return Result.Failure<Guid>(ContentErrors.SiteNotFound);
         if (await campaigns.ExistsBySlugAsync(command.SiteKey, command.Slug, null, cancellationToken))
-            return Result.Failure<Guid>(ContentErrors.MarketingCampaignSlugAlreadyExists);
+            return Result.Failure<Guid>(CampaignErrors.SlugAlreadyExists);
         var landingValidation = await MarketingCampaignCommandValidation.ValidateLandingAsync(command.SiteKey,
             command.LandingContentId, contentItems, cancellationToken);
         if (landingValidation.IsFailure) return Result.Failure<Guid>(landingValidation.Error);
@@ -55,7 +55,7 @@ public sealed class CreateMarketingCampaignCommandHandler(ISiteRepository sites,
                 command.StartsAtUtc, command.EndsAtUtc, command.LandingContentId, command.UtmSource,
                 command.UtmMedium, command.UtmCampaign, command.GoalType, command.SettingsJson, command.ActorUserId);
         }
-        catch (ArgumentException) { return Result.Failure<Guid>(ContentErrors.InvalidMarketingCampaignData); }
+        catch (ArgumentException) { return Result.Failure<Guid>(CampaignErrors.InvalidData); }
 
         await campaigns.AddAsync(campaign, cancellationToken);
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingCampaignCreated,
@@ -80,11 +80,11 @@ public sealed class UpdateMarketingCampaignCommandHandler(ISiteRepository sites,
     public async Task<Result> HandleAsync(UpdateMarketingCampaignCommand command, CancellationToken cancellationToken = default)
     {
         var campaign = await campaigns.GetByIdAsync(command.Id, cancellationToken);
-        if (campaign is null || campaign.IsDeleted) return Result.Failure(ContentErrors.MarketingCampaignNotFound);
+        if (campaign is null || campaign.IsDeleted) return Result.Failure(CampaignErrors.NotFound);
         var site = await sites.GetBySiteKeyAsync(command.SiteKey, cancellationToken);
         if (site is null || site.IsDeleted) return Result.Failure(ContentErrors.SiteNotFound);
         if (await campaigns.ExistsBySlugAsync(command.SiteKey, command.Slug, command.Id, cancellationToken))
-            return Result.Failure(ContentErrors.MarketingCampaignSlugAlreadyExists);
+            return Result.Failure(CampaignErrors.SlugAlreadyExists);
         var landingValidation = await MarketingCampaignCommandValidation.ValidateLandingAsync(command.SiteKey,
             command.LandingContentId, contentItems, cancellationToken);
         if (landingValidation.IsFailure) return landingValidation;
@@ -95,7 +95,7 @@ public sealed class UpdateMarketingCampaignCommandHandler(ISiteRepository sites,
                 command.EndsAtUtc, command.LandingContentId, command.UtmSource, command.UtmMedium,
                 command.UtmCampaign, command.GoalType, command.SettingsJson, command.ActorUserId);
         }
-        catch (ArgumentException) { return Result.Failure(ContentErrors.InvalidMarketingCampaignData); }
+        catch (ArgumentException) { return Result.Failure(CampaignErrors.InvalidData); }
 
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingCampaignUpdated,
             ContentAuditActions.Updated, ContentAuditEntityTypes.MarketingCampaign, campaign.Id,
@@ -111,7 +111,7 @@ public sealed class DeleteMarketingCampaignCommandHandler(IMarketingCampaignRepo
     public async Task<Result> HandleAsync(DeleteMarketingCampaignCommand command, CancellationToken cancellationToken = default)
     {
         var campaign = await campaigns.GetByIdAsync(command.Id, cancellationToken);
-        if (campaign is null || campaign.IsDeleted) return Result.Failure(ContentErrors.MarketingCampaignNotFound);
+        if (campaign is null || campaign.IsDeleted) return Result.Failure(CampaignErrors.NotFound);
         var before = CreateMarketingCampaignCommandHandler.Snapshot(campaign);
         campaign.Delete(command.ActorUserId);
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingCampaignDeleted,

@@ -31,7 +31,7 @@ public sealed class GetMarketingCampaignByIdQueryHandler(IMarketingCampaignRepos
     {
         var campaign = await campaigns.GetByIdAsync(query.Id, cancellationToken);
         return campaign is null || campaign.IsDeleted
-            ? Result.Failure<MarketingCampaignDto>(ContentErrors.MarketingCampaignNotFound)
+            ? Result.Failure<MarketingCampaignDto>(CampaignErrors.NotFound)
             : Result.Success(GetMarketingCampaignsQueryHandler.Map(campaign));
     }
 }
