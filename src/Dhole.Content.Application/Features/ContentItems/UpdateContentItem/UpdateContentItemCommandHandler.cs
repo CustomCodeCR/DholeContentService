@@ -36,8 +36,11 @@ public sealed class UpdateContentItemCommandHandler(
         var slug = string.IsNullOrWhiteSpace(command.Slug)
             ? item.Slug
             : slugs.Generate(command.Slug);
+        var locale = string.IsNullOrWhiteSpace(command.Locale)
+            ? item.Locale
+            : command.Locale.Trim();
 
-        if (await contents.ExistsBySlugAsync(item.SiteKey, slug, item.Id, cancellationToken))
+        if (await contents.ExistsBySlugAsync(item.SiteKey, locale, slug, item.Id, cancellationToken))
         {
             return Result.Failure(ContentErrors.ContentSlugAlreadyExists);
         }
@@ -51,7 +54,17 @@ public sealed class UpdateContentItemCommandHandler(
             command.FeaturedMediaId,
             command.SortOrder,
             command.IsFeatured,
-            command.Locale,
+            locale,
+            command.UpdatedBy
+        );
+
+        item.ConfigureCmsMetadata(
+            command.ParentContentId,
+            command.TranslationGroupId,
+            command.TemplateKey,
+            command.UnpublishAtUtc,
+            command.SitemapPriority,
+            command.SitemapChangeFrequency,
             command.UpdatedBy
         );
 
