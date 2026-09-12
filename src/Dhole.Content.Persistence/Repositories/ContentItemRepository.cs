@@ -75,6 +75,13 @@ public sealed class ContentItemRepository(ServiceDbContext db) : EfRepository<Co
             .Take(take)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyCollection<ContentItem>> GetDueUnpublishAsync(DateTime utcNow, int take = 100, CancellationToken ct = default) =>
+        await db.ContentItems
+            .Where(x => !x.IsDeleted && x.Status == ContentStatus.Published && x.UnpublishAtUtc != null && x.UnpublishAtUtc <= utcNow)
+            .OrderBy(x => x.UnpublishAtUtc)
+            .Take(take)
+            .ToListAsync(ct);
+
     public Task<ContentRevision?> GetRevisionAsync(Guid contentId, Guid revisionId, CancellationToken ct = default) =>
         db.ContentRevisions.FirstOrDefaultAsync(x => x.ContentId == contentId && x.Id == revisionId, ct);
 
