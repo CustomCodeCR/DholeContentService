@@ -1,7 +1,6 @@
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Routes.Entities;
-using Dhole.Content.Domain.Sites.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,10 +31,8 @@ internal sealed class ContentRouteConfiguration : EntityTypeConfigurationBase<Co
             .HasForeignKey(x => x.ContentId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Site>()
-            .WithMany()
-            .HasForeignKey(x => x.SiteKey)
-            .HasPrincipalKey(x => x.SiteKey)
-            .OnDelete(DeleteBehavior.Restrict);
+        // SiteKey is validated against content.sites in the application layer.
+        // content.sites uses a partial unique index because it is soft-deletable,
+        // and PostgreSQL cannot target a partial unique index with a foreign key.
     }
 }
