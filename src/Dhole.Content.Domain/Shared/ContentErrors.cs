@@ -7,6 +7,7 @@ public static class ContentErrors
     public static readonly Error InvalidContentType=new("Content.InvalidContentType","El tipo de contenido no es válido.");
     public static readonly Error InvalidContentState=new("Content.InvalidContentState","El estado actual no permite realizar esta operación.");
     public static readonly Error InvalidScheduleDate=new("Content.InvalidScheduleDate","La fecha programada debe estar en el futuro.");
+    public static readonly Error InvalidPublicationWindow=new("Content.InvalidPublicationWindow","La fecha de despublicación debe ser posterior a la fecha de publicación programada.");
     public static readonly Error RevisionNotFound=new("Content.RevisionNotFound","No se encontró la revisión solicitada.");
     public static readonly Error TaxonomyNotFound=new("Content.TaxonomyNotFound","No se encontró la categoría o etiqueta solicitada.");
     public static readonly Error TaxonomySlugAlreadyExists=new("Content.TaxonomySlugAlreadyExists","Ya existe una categoría o etiqueta con ese slug.");
