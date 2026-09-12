@@ -60,7 +60,8 @@ public static class ContentRouteEndpoints
                             request.Path,
                             request.IsPrimary,
                             request.IsActive,
-                            context.GetCurrentUserId()),
+                            context.GetCurrentUserId(),
+                            request.CreatePermanentRedirect),
                         ct),
                     context))
             .RequireScope(ContentScopeNames.Edit);

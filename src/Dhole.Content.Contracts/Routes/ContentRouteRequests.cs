@@ -14,5 +14,6 @@ public sealed record UpdateContentRouteRequest(
     string Locale,
     string Path,
     bool IsPrimary,
-    bool IsActive
+    bool IsActive,
+    bool CreatePermanentRedirect = false
 );

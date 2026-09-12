@@ -1,7 +1,11 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
+using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Application.Auditing;
+using Dhole.Content.Application.Redirects;
+using Dhole.Content.Domain.Redirects.Entities;
 using Dhole.Content.Domain.Routes.Entities;
 using Dhole.Content.Domain.Shared;
 
@@ -11,6 +15,8 @@ public sealed class UpdateContentRouteCommandHandler(
     IContentRouteRepository routes,
     IContentItemRepository contents,
     ISiteRepository sites,
+    IRedirectRepository redirects,
+    IContentAuditService audit,
     IUnitOfWork unitOfWork
 ) : ICommandHandler<UpdateContentRouteCommand, Result>
 {
@@ -46,7 +52,30 @@ public sealed class UpdateContentRouteCommandHandler(
                 currentPrimary.SetPrimary(false, command.ActorUserId);
         }
 
+        var oldPath = route.Path;
+        var pathChanged = !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase);
         route.Update(siteKey, locale, path, command.IsPrimary, command.IsActive, command.ActorUserId);
+
+        if (pathChanged && command.CreatePermanentRedirect)
+        {
+            var existing = await redirects.GetBySourcePathAsync(siteKey, oldPath, ct);
+            if (existing is null)
+            {
+                var redirect = ContentRedirect.Create(siteKey, oldPath, path, 301, true, null, null, command.ActorUserId);
+                await redirects.AddAsync(redirect, ct);
+                await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.RedirectCreated, ContentAuditActions.Created,
+                    ContentAuditEntityTypes.Redirect, redirect.Id, command.ActorUserId, After: RedirectAuditSnapshot.From(redirect)), ct);
+            }
+            else
+            {
+                var before = RedirectAuditSnapshot.From(existing);
+                existing.Update(siteKey, oldPath, path, 301, true, null, null, command.ActorUserId);
+                await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.RedirectUpdated, ContentAuditActions.Updated,
+                    ContentAuditEntityTypes.Redirect, existing.Id, command.ActorUserId, Before: before,
+                    After: RedirectAuditSnapshot.From(existing)), ct);
+            }
+        }
+
         await unitOfWork.SaveChangesAsync(ct);
         return Result.Success();
     }
