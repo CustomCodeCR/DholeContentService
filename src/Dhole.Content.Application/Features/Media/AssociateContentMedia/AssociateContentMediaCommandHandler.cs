@@ -4,6 +4,7 @@ using CustomCodeFramework.Persistence.Abstractions;
 using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Domain.Media;
 using Dhole.Content.Domain.Media.Entities;
 using Dhole.Content.Domain.Shared;
 
@@ -25,7 +26,17 @@ public sealed class AssociateContentMediaCommandHandler(
         var mediaReference = await media.GetByIdAsync(command.MediaReferenceId, cancellationToken);
         if (mediaReference is null || mediaReference.IsDeleted) return Result.Failure<Guid>(ContentErrors.MediaNotFound);
 
-        if (await links.ExistsAsync(command.ContentId, command.MediaReferenceId, command.Role, null, cancellationToken))
+        string normalizedRole;
+        try
+        {
+            normalizedRole = ContentMediaRoles.Normalize(command.Role);
+        }
+        catch (ArgumentException)
+        {
+            return Result.Failure<Guid>(ContentErrors.InvalidContentMedia);
+        }
+
+        if (await links.ExistsAsync(command.ContentId, command.MediaReferenceId, normalizedRole, null, cancellationToken))
             return Result.Failure<Guid>(ContentErrors.ContentMediaAlreadyExists);
 
         ContentMedia link;
@@ -34,7 +45,7 @@ public sealed class AssociateContentMediaCommandHandler(
             link = ContentMedia.Create(
                 command.ContentId,
                 command.MediaReferenceId,
-                command.Role,
+                normalizedRole,
                 command.SortOrder,
                 command.AltTextOverride,
                 command.CaptionOverride,
