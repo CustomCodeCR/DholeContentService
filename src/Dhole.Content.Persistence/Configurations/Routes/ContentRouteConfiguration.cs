@@ -18,11 +18,12 @@ internal sealed class ContentRouteConfiguration : EntityTypeConfigurationBase<Co
         builder.Property(x => x.Path).HasMaxLength(1200).IsRequired();
 
         builder.HasIndex(x => new { x.SiteKey, x.Locale, x.Path })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("is_deleted = false");
 
         builder.HasIndex(x => new { x.ContentId, x.Locale })
             .IsUnique()
-            .HasFilter("is_primary = true");
+            .HasFilter("is_primary = true AND is_deleted = false");
 
         builder.HasIndex(x => new { x.SiteKey, x.ContentId, x.Locale });
 
