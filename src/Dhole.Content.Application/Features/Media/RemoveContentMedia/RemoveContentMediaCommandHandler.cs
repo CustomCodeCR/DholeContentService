@@ -17,7 +17,8 @@ public sealed class RemoveContentMediaCommandHandler(
     public async Task<Result> HandleAsync(RemoveContentMediaCommand command, CancellationToken cancellationToken = default)
     {
         var link = await links.GetByIdAsync(command.Id, cancellationToken);
-        if (link is null || link.IsDeleted) return Result.Failure(ContentErrors.ContentMediaNotFound);
+        if (link is null || link.IsDeleted || link.ContentId != command.ContentId)
+            return Result.Failure(ContentErrors.ContentMediaNotFound);
 
         var before = new
         {
