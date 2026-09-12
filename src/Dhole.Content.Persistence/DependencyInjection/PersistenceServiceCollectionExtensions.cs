@@ -19,6 +19,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddCustomCodePostgres(configuration);
         services.AddCustomCodePostgresEntityFramework<ServiceDbContext>();
         services.AddScoped<IContentItemRepository, ContentItemRepository>();
+        services.AddScoped<IContentRouteRepository, ContentRouteRepository>();
         services.AddScoped<ITaxonomyTermRepository, TaxonomyTermRepository>();
         services.AddScoped<IMediaReferenceRepository, MediaReferenceRepository>();
         services.AddScoped<INavigationMenuRepository, NavigationMenuRepository>();
