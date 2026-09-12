@@ -3,6 +3,7 @@ using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Submissions.Entities;
 using Dhole.Content.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace Dhole.Content.UnitTests;
 
