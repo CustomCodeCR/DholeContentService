@@ -18,22 +18,12 @@ builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddCustomCodeApiWithSwagger(title: "Dhole Content Service", version: "v1");
 builder.Services.AddGrpc();
 builder.Services.AddCors(options =>
-    options.AddPolicy(
-        CorsPolicyName,
-        policy =>
-        {
-            var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-            if (origins.Length > 0)
-            {
-                policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
-            }
-            else
-            {
-                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-            }
-        }
-    )
-);
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        if (origins.Length > 0) policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+        else policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    }));
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -43,41 +33,16 @@ var storageUrl = builder.Configuration["ServiceUrls:Storage"] ?? "http://localho
 builder.Services.AddHttpClient("DholeStorage", client => client.BaseAddress = new Uri(storageUrl));
 
 var app = builder.Build();
-
 app.UseCustomCodeApi();
 app.UseCors(CorsPolicyName);
+if (app.Environment.IsDevelopment()) app.UseCustomCodeSwagger();
 
-if (app.Environment.IsDevelopment())
+app.MapGet("/health", async (ServiceDbContext db, CancellationToken cancellationToken) =>
 {
-    app.UseCustomCodeSwagger();
-}
-
-app.MapGet(
-        "/health",
-        async (ServiceDbContext db, CancellationToken cancellationToken) =>
-        {
-            var healthy = false;
-            try
-            {
-                healthy = await db.Database.CanConnectAsync(cancellationToken);
-            }
-            catch
-            {
-            }
-
-            return Results.Json(
-                new
-                {
-                    service = "DholeContentService",
-                    status = healthy ? "Healthy" : "Unhealthy",
-                    database = healthy ? "Connected" : "Unavailable",
-                    timestamp = DateTimeOffset.UtcNow,
-                },
-                statusCode: healthy ? 200 : 503
-            );
-        }
-    )
-    .AllowAnonymous();
+    var healthy = false;
+    try { healthy = await db.Database.CanConnectAsync(cancellationToken); } catch { }
+    return Results.Json(new { service = "DholeContentService", status = healthy ? "Healthy" : "Unhealthy", database = healthy ? "Connected" : "Unavailable", timestamp = DateTimeOffset.UtcNow }, statusCode: healthy ? 200 : 503);
+}).AllowAnonymous();
 
 app.UseAuthentication();
 app.UseMiddleware<AuditExecutionContextMiddleware>();
@@ -92,6 +57,7 @@ app.MapPageBuilderEndpoints();
 app.MapContentMediaEndpoints();
 app.MapPlacementEndpoints();
 app.MapCollectionEndpoints();
+app.MapSeoEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();

@@ -39,4 +39,5 @@ public static class ContentErrors
     public static readonly Error CollectionCodeAlreadyExists=new("Content.CollectionCodeAlreadyExists","Ya existe una colección con el mismo código para este sitio.");
     public static readonly Error CollectionItemNotFound=new("Content.CollectionItemNotFound","No se encontró el elemento de la colección solicitado.");
     public static readonly Error InvalidCollectionData=new("Content.InvalidCollectionData","Los datos de la colección o de su elemento no son válidos.");
+    public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
 }
