@@ -13,6 +13,7 @@ public interface IContentItemRepository : IRepository<ContentItem, Guid>
     Task<ContentItem?> GetPublishedBySlugAsync(string siteKey, string slug, string? locale, CancellationToken cancellationToken = default);
     Task<PagedResult<ContentItemListDto>> GetPagedAsync(PageRequest page, string? siteKey = null, ContentType? type = null, ContentStatus? status = null, string? search = null, string? locale = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<ContentItem>> GetDueScheduledAsync(DateTime utcNow, int take = 100, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<ContentItem>> GetDueUnpublishAsync(DateTime utcNow, int take = 100, CancellationToken cancellationToken = default);
     Task<ContentRevision?> GetRevisionAsync(Guid contentId, Guid revisionId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<ContentRevisionDto>> GetRevisionsAsync(Guid contentId, CancellationToken cancellationToken = default);
 }
