@@ -15,4 +15,8 @@ public static class ContentErrors
     public static readonly Error MenuNotFound=new("Content.MenuNotFound","No se encontró el menú solicitado.");
     public static readonly Error SettingNotFound=new("Content.SettingNotFound","No se encontró la configuración solicitada.");
     public static readonly Error InvalidJson=new("Content.InvalidJson","El contenido JSON no es válido.");
+    public static readonly Error SiteNotFound=new("Content.SiteNotFound","No se encontró el sitio solicitado.");
+    public static readonly Error SiteKeyAlreadyExists=new("Content.SiteKeyAlreadyExists","Ya existe un sitio con el mismo SiteKey.");
+    public static readonly Error SiteDomainAlreadyExists=new("Content.SiteDomainAlreadyExists","Ya existe un sitio con el mismo dominio principal.");
+    public static readonly Error InvalidSiteData=new("Content.InvalidSiteData","Los datos del sitio no son válidos.");
 }
