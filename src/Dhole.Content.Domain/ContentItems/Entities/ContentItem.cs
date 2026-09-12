@@ -130,14 +130,33 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
 
     public void SubmitForReview(Guid? actorUserId)
     {
-        EnsureNotArchived(); Status = ContentStatus.PendingReview; ScheduledAtUtc = null;
+        EnsureNotArchived();
+        if (Status is not ContentStatus.Draft and not ContentStatus.Rejected)
+            throw new InvalidOperationException("Solo contenido Draft o Rejected puede enviarse a revisión.");
+        Status = ContentStatus.PendingReview;
+        ScheduledAtUtc = null;
         MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemSubmittedForReviewDomainEvent(Id, SiteKey, Slug, actorUserId));
     }
 
+    public void RejectReview(Guid? actorUserId)
+    {
+        EnsureNotArchived();
+        if (Status != ContentStatus.PendingReview)
+            throw new InvalidOperationException("Solo contenido PendingReview puede rechazarse.");
+        Status = ContentStatus.Rejected;
+        ScheduledAtUtc = null;
+        MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
+    }
+
     public void Publish(DateTime utcNow, Guid? actorUserId)
     {
-        EnsureNotArchived(); Status = ContentStatus.Published; PublishedAtUtc = utcNow; ScheduledAtUtc = null;
+        EnsureNotArchived();
+        if (Status is not ContentStatus.PendingReview and not ContentStatus.Scheduled)
+            throw new InvalidOperationException("Solo contenido aprobado o programado puede publicarse.");
+        Status = ContentStatus.Published;
+        PublishedAtUtc = utcNow;
+        ScheduledAtUtc = null;
         MarkAsUpdated(utcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemPublishedDomainEvent(Id, SiteKey, Slug, utcNow, actorUserId));
     }

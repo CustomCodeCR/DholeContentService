@@ -6,5 +6,6 @@ public enum ContentStatus
     PendingReview = 1,
     Scheduled = 2,
     Published = 3,
-    Archived = 4
+    Archived = 4,
+    Rejected = 5
 }

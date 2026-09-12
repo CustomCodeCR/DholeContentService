@@ -94,6 +94,7 @@ app.MapPlacementEndpoints();
 app.MapCollectionEndpoints();
 app.MapSeoEndpoints();
 app.MapRedirectEndpoints();
+app.MapContentReviewEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();

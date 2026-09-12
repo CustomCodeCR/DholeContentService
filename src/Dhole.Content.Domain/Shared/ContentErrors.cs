@@ -43,4 +43,8 @@ public static class ContentErrors
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");
     public static readonly Error InvalidRedirectData=new("Content.InvalidRedirectData","Los datos del redirect no son válidos.");
+    public static readonly Error ContentReviewNotFound=new("Content.ContentReviewNotFound","No se encontró la revisión de contenido solicitada.");
+    public static readonly Error ContentReviewAlreadyPending=new("Content.ContentReviewAlreadyPending","El contenido ya tiene una revisión pendiente.");
+    public static readonly Error ContentReviewNotPending=new("Content.ContentReviewNotPending","La revisión de contenido ya fue decidida o no está pendiente.");
+    public static readonly Error InvalidContentReviewData=new("Content.InvalidContentReviewData","Los datos de la revisión de contenido no son válidos.");
 }
