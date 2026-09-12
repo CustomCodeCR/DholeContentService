@@ -2,7 +2,9 @@ using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Contracts.Consents;
 using Dhole.Content.Contracts.Submissions;
+using Dhole.Content.Domain.Consents.Entities;
 using Dhole.Content.Domain.Forms;
 using Dhole.Content.Domain.Shared;
 using Dhole.Content.Domain.Submissions;
@@ -24,12 +26,14 @@ public sealed record SubmitMarketingFormCommand(
     string PayloadJson,
     string? IpHash,
     string? UserAgent,
-    Guid CorrelationId) : ICommand<Result<MarketingSubmissionReceiptDto>>;
+    Guid CorrelationId,
+    IReadOnlyCollection<SubmitMarketingConsentRequest>? Consents = null) : ICommand<Result<MarketingSubmissionReceiptDto>>;
 
 public sealed class SubmitMarketingFormCommandHandler(
     IMarketingFormRepository forms,
     IMarketingFormFieldRepository fields,
     IMarketingSubmissionRepository submissions,
+    IMarketingConsentRepository consents,
     IContentItemRepository contentItems,
     IUnitOfWork unitOfWork) : ICommandHandler<SubmitMarketingFormCommand, Result<MarketingSubmissionReceiptDto>>
 {
@@ -90,7 +94,33 @@ public sealed class SubmitMarketingFormCommandHandler(
             return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingSubmissionData);
         }
 
+        var consentEntities = new List<MarketingConsent>();
+        if (command.Consents is { Count: > 0 })
+        {
+            var seenPurposes = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var input in command.Consents)
+            {
+                MarketingConsent consent;
+                try
+                {
+                    consent = MarketingConsent.Create(null, submission.Id, input.Purpose, input.Granted,
+                        input.PolicyVersion, input.Source ?? "form", submission.SubmittedAtUtc, null,
+                        submission.SubmittedAtUtc);
+                }
+                catch (ArgumentException)
+                {
+                    return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingConsentData);
+                }
+
+                if (!seenPurposes.Add(consent.Purpose))
+                    return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingConsentData);
+                consentEntities.Add(consent);
+            }
+        }
+
         await submissions.AddAsync(submission, cancellationToken);
+        foreach (var consent in consentEntities)
+            await consents.AddAsync(consent, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new MarketingSubmissionReceiptDto(

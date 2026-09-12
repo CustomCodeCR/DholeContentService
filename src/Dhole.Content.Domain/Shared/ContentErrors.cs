@@ -51,6 +51,8 @@ public static class ContentErrors
     public static readonly Error MarketingLeadNotFound=new("Content.MarketingLeadNotFound","No se encontró el lead solicitado.");
     public static readonly Error MarketingLeadEmailAlreadyExists=new("Content.MarketingLeadEmailAlreadyExists","Ya existe un lead con el mismo email para este sitio.");
     public static readonly Error InvalidMarketingLeadData=new("Content.InvalidMarketingLeadData","Los datos del lead no son válidos.");
+    public static readonly Error MarketingConsentNotFound=new("Content.MarketingConsentNotFound","No se encontró el consentimiento solicitado.");
+    public static readonly Error InvalidMarketingConsentData=new("Content.InvalidMarketingConsentData","Los datos del consentimiento no son válidos.");
     public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Dhole.Content.Contracts.Consents;
 
 namespace Dhole.Content.Contracts.Submissions;
 
@@ -31,7 +32,8 @@ public sealed record SubmitMarketingFormRequest(
     string? UtmCampaign,
     string? UtmContent,
     string? UtmTerm,
-    JsonElement Payload);
+    JsonElement Payload,
+    IReadOnlyCollection<SubmitMarketingConsentRequest>? Consents = null);
 
 public sealed record MarketingSubmissionReceiptDto(
     Guid SubmissionId,

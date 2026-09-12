@@ -43,7 +43,8 @@ public static class MarketingSubmissionEndpoints
                         payloadJson,
                         ipHash,
                         userAgent,
-                        correlationId), ct), context);
+                        correlationId,
+                        request.Consents), ct), context);
             })
             .WithTags("Marketing Submissions")
             .AllowAnonymous();
