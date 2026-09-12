@@ -2,7 +2,7 @@ using CustomCodeFramework.Core.Domain.Entities;
 
 namespace Dhole.Content.Domain.Routes.Entities;
 
-public sealed class ContentRoute : AggregateRoot<Guid>
+public sealed class ContentRoute : SoftDeletableAggregateRoot<Guid>
 {
     private ContentRoute() { }
 
@@ -75,6 +75,9 @@ public sealed class ContentRoute : AggregateRoot<Guid>
         IsActive = isActive;
         MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
     }
+
+    public void Delete(Guid? actorUserId)
+        => MarkAsDeleted(DateTime.UtcNow, actorUserId?.ToString());
 
     public static string NormalizePath(string value)
     {
