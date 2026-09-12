@@ -26,6 +26,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<ContentTaxonomy> ContentTaxonomies => Set<ContentTaxonomy>();
     public DbSet<TaxonomyTerm> TaxonomyTerms => Set<TaxonomyTerm>();
     public DbSet<MediaReference> MediaReferences => Set<MediaReference>();
+    public DbSet<ContentMedia> ContentMedia => Set<ContentMedia>();
     public DbSet<NavigationMenu> NavigationMenus => Set<NavigationMenu>();
     public DbSet<NavigationMenuItem> NavigationMenuItems => Set<NavigationMenuItem>();
     public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
