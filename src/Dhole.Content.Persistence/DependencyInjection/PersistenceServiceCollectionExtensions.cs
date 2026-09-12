@@ -28,6 +28,8 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<ISiteRepository, SiteRepository>();
         services.AddScoped<IPlacementRepository, PlacementRepository>();
         services.AddScoped<IPlacementItemRepository, PlacementItemRepository>();
+        services.AddScoped<ICollectionRepository, CollectionRepository>();
+        services.AddScoped<ICollectionItemRepository, CollectionItemRepository>();
         services.AddScoped<IIntegrationEventOutboxWriter, IntegrationEventOutboxWriter>();
         services.AddScoped<IContentAuditService, ContentAuditService>();
         return services;

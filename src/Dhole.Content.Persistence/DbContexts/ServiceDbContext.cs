@@ -4,6 +4,7 @@ using CustomCodeFramework.Messaging.Inbox;
 using CustomCodeFramework.Messaging.Outbox;
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
 using CustomCodeFramework.Postgres.EntityFramework.DbContexts;
+using Dhole.Content.Domain.Collections.Entities;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Media.Entities;
 using Dhole.Content.Domain.Navigation.Entities;
@@ -35,6 +36,8 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<ContentRoute> ContentRoutes => Set<ContentRoute>();
     public DbSet<Placement> Placements => Set<Placement>();
     public DbSet<PlacementItem> PlacementItems => Set<PlacementItem>();
+    public DbSet<ContentCollection> Collections => Set<ContentCollection>();
+    public DbSet<ContentCollectionItem> CollectionItems => Set<ContentCollectionItem>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 

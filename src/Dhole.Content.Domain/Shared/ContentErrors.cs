@@ -35,4 +35,8 @@ public static class ContentErrors
     public static readonly Error PlacementItemAlreadyExists=new("Content.PlacementItemAlreadyExists","El contenido ya está asociado a este placement.");
     public static readonly Error PlacementContentNotAllowed=new("Content.PlacementContentNotAllowed","El contenido no pertenece al mismo sitio o su tipo no está permitido por el placement.");
     public static readonly Error InvalidPlacementData=new("Content.InvalidPlacementData","Los datos del placement o de su contenido asociado no son válidos.");
+    public static readonly Error CollectionNotFound=new("Content.CollectionNotFound","No se encontró la colección solicitada.");
+    public static readonly Error CollectionCodeAlreadyExists=new("Content.CollectionCodeAlreadyExists","Ya existe una colección con el mismo código para este sitio.");
+    public static readonly Error CollectionItemNotFound=new("Content.CollectionItemNotFound","No se encontró el elemento de la colección solicitado.");
+    public static readonly Error InvalidCollectionData=new("Content.InvalidCollectionData","Los datos de la colección o de su elemento no son válidos.");
 }
