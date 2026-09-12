@@ -38,6 +38,12 @@ internal sealed class ContentItemConfiguration : EntityTypeConfigurationBase<Con
         b.HasIndex(x => new { x.SiteKey, x.Type, x.Status, x.PublishedAtUtc });
         b.HasIndex(x => new { x.SiteKey, x.TranslationGroupId });
         b.HasIndex(x => x.ParentContentId);
+        b.HasIndex(x => x.ScheduledAtUtc)
+            .HasDatabaseName("ix_content_items_scheduled_due")
+            .HasFilter("is_deleted = false AND status = 'Scheduled' AND scheduled_at_utc IS NOT NULL");
+        b.HasIndex(x => x.UnpublishAtUtc)
+            .HasDatabaseName("ix_content_items_unpublish_due")
+            .HasFilter("is_deleted = false AND status = 'Published' AND unpublish_at_utc IS NOT NULL");
 
         b.HasOne<ContentItem>()
             .WithMany()
