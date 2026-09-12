@@ -22,6 +22,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<IContentRouteRepository, ContentRouteRepository>();
         services.AddScoped<ITaxonomyTermRepository, TaxonomyTermRepository>();
         services.AddScoped<IMediaReferenceRepository, MediaReferenceRepository>();
+        services.AddScoped<IContentMediaRepository, ContentMediaRepository>();
         services.AddScoped<INavigationMenuRepository, NavigationMenuRepository>();
         services.AddScoped<ISiteSettingRepository, SiteSettingRepository>();
         services.AddScoped<ISiteRepository, SiteRepository>();
