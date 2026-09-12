@@ -15,6 +15,7 @@ using Dhole.Content.Domain.Reviews.Entities;
 using Dhole.Content.Domain.Routes.Entities;
 using Dhole.Content.Domain.Settings.Entities;
 using Dhole.Content.Domain.Sites.Entities;
+using Dhole.Content.Domain.Submissions.Entities;
 using Dhole.Content.Domain.Taxonomies.Entities;
 using Dhole.Content.Persistence.Auditing;
 using Dhole.Content.Persistence.Messaging;
@@ -43,6 +44,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<ContentCollectionItem> CollectionItems => Set<ContentCollectionItem>();
     public DbSet<MarketingForm> MarketingForms => Set<MarketingForm>();
     public DbSet<MarketingFormField> MarketingFormFields => Set<MarketingFormField>();
+    public DbSet<MarketingSubmission> MarketingSubmissions => Set<MarketingSubmission>();
     public DbSet<ContentRedirect> Redirects => Set<ContentRedirect>();
     public DbSet<ContentReview> ContentReviews => Set<ContentReview>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
