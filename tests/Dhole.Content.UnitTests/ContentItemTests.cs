@@ -38,10 +38,10 @@ public sealed class ContentItemTests
     {
         var actor = Guid.NewGuid();
         var item = ContentItem.Create(ContentType.Post, "Uno", "uno", "[]", null, actor);
-        var revision = item.Snapshot(actor, "test");
+        var revision = item.CreateRevision(actor, "test");
 
         item.Update("Dos", "dos", null, "[]", null, null, 0, false, null, actor);
-        item.Restore(revision, actor);
+        item.RestoreRevision(revision, actor);
 
         Assert.Equal("Uno", item.Title);
         Assert.Equal(ContentStatus.Draft, item.Status);
