@@ -57,6 +57,19 @@ public sealed class Phase12ContentReviewTests
     }
 
     [Fact]
+    public void ContentItem_PendingReview_CannotBeMutated()
+    {
+        var actor = Guid.NewGuid();
+        var item = ContentItem.Create(ContentType.Page, "Página", "pagina", "[]", null, actor);
+        item.SubmitForReview(actor);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            item.Update("Página modificada", "pagina-modificada", null, "[]", null, null, 0, false, null, actor));
+        Assert.Throws<InvalidOperationException>(() =>
+            item.SetSeo("SEO nuevo", null, null, null, "index,follow", null, null, actor));
+    }
+
+    [Fact]
     public void ContentItem_Publish_OnlyAllowsPendingReviewOrScheduled()
     {
         var item = ContentItem.Create(ContentType.Page, "Página", "pagina", "[]", null, Guid.NewGuid());
