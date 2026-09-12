@@ -322,6 +322,7 @@ public static class EditorEndpoints
                         new ScheduleContentCommand(
                             id,
                             request.ScheduledAtUtc,
+                            request.UnpublishAtUtc,
                             context.GetCurrentUserId()
                         ),
                         cancellationToken
