@@ -210,7 +210,7 @@ public static class ContentItemEndpoints
                     CancellationToken cancellationToken
                 ) => EndpointResults.FromResult(
                     await dispatcher.DispatchAsync(
-                        new ScheduleContentCommand(id, request.ScheduledAtUtc, context.GetCurrentUserId()),
+                        new ScheduleContentCommand(id, request.ScheduledAtUtc, request.UnpublishAtUtc, context.GetCurrentUserId()),
                         cancellationToken
                     ),
                     context
