@@ -19,4 +19,7 @@ public static class ContentErrors
     public static readonly Error SiteKeyAlreadyExists=new("Content.SiteKeyAlreadyExists","Ya existe un sitio con el mismo SiteKey.");
     public static readonly Error SiteDomainAlreadyExists=new("Content.SiteDomainAlreadyExists","Ya existe un sitio con el mismo dominio principal.");
     public static readonly Error InvalidSiteData=new("Content.InvalidSiteData","Los datos del sitio no son válidos.");
+    public static readonly Error ContentRouteNotFound=new("Content.ContentRouteNotFound","No se encontró la ruta de contenido solicitada.");
+    public static readonly Error ContentRoutePathAlreadyExists=new("Content.ContentRoutePathAlreadyExists","Ya existe una ruta con el mismo path para este sitio e idioma.");
+    public static readonly Error ContentRouteSiteMismatch=new("Content.ContentRouteSiteMismatch","La ruta y el contenido deben pertenecer al mismo sitio e idioma.");
 }
