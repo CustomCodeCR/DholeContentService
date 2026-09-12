@@ -89,6 +89,7 @@ app.MapEditorEndpoints();
 app.MapContentItemEndpoints();
 app.MapContentRouteEndpoints();
 app.MapPageBuilderEndpoints();
+app.MapContentMediaEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
