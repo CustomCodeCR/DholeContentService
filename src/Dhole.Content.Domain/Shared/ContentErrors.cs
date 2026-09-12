@@ -22,4 +22,8 @@ public static class ContentErrors
     public static readonly Error ContentRouteNotFound=new("Content.ContentRouteNotFound","No se encontró la ruta de contenido solicitada.");
     public static readonly Error ContentRoutePathAlreadyExists=new("Content.ContentRoutePathAlreadyExists","Ya existe una ruta con el mismo path para este sitio e idioma.");
     public static readonly Error ContentRouteSiteMismatch=new("Content.ContentRouteSiteMismatch","La ruta y el contenido deben pertenecer al mismo sitio e idioma.");
+    public static readonly Error InvalidBlocksJson=new("Content.InvalidBlocksJson","BlocksJson no cumple el formato seguro del Page Builder.");
+    public static readonly Error PageBuilderOnlyPages=new("Content.PageBuilderOnlyPages","El Page Builder solo puede utilizarse con contenido de tipo Page.");
+    public static readonly Error PageBuilderBlockNotFound=new("Content.PageBuilderBlockNotFound","No se encontró el bloque solicitado.");
+    public static readonly Error InvalidPageBuilderOperation=new("Content.InvalidPageBuilderOperation","La operación o los datos del Page Builder no son válidos o contienen contenido no permitido.");
 }
