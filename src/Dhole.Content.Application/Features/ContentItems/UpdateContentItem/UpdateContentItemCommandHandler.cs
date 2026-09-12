@@ -6,6 +6,7 @@ using Dhole.Content.Application.Abstractions.Cache;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Abstractions.Slugs;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Domain.PageBuilder;
 using Dhole.Content.Domain.Shared;
 
 namespace Dhole.Content.Application.ContentItems.UpdateContentItem;
@@ -29,6 +30,16 @@ public sealed class UpdateContentItemCommandHandler(
             return Result.Failure(ContentErrors.ContentNotFound);
         }
 
+        string blocksJson;
+        try
+        {
+            blocksJson = PageBuilderDocument.NormalizeAndValidate(command.BlocksJson);
+        }
+        catch (ArgumentException)
+        {
+            return Result.Failure(ContentErrors.InvalidBlocksJson);
+        }
+
         var before = ContentAuditSnapshots.From(item);
         var oldSlug = item.Slug;
         item.CreateRevision(command.UpdatedBy, "before-update");
@@ -49,7 +60,7 @@ public sealed class UpdateContentItemCommandHandler(
             command.Title,
             slug,
             command.Excerpt,
-            command.BlocksJson,
+            blocksJson,
             command.RenderedHtml,
             command.FeaturedMediaId,
             command.SortOrder,
