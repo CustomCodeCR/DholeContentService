@@ -53,6 +53,11 @@ public static class ContentErrors
     public static readonly Error InvalidMarketingLeadData=new("Content.InvalidMarketingLeadData","Los datos del lead no son válidos.");
     public static readonly Error MarketingConsentNotFound=new("Content.MarketingConsentNotFound","No se encontró el consentimiento solicitado.");
     public static readonly Error InvalidMarketingConsentData=new("Content.InvalidMarketingConsentData","Los datos del consentimiento no son válidos.");
+    public static readonly Error MeetingTypeNotFound=new("Content.MeetingTypeNotFound","No se encontró el tipo de reunión solicitado.");
+    public static readonly Error MeetingTypeSlugAlreadyExists=new("Content.MeetingTypeSlugAlreadyExists","Ya existe un tipo de reunión con el mismo slug para este sitio.");
+    public static readonly Error MeetingRequestNotFound=new("Content.MeetingRequestNotFound","No se encontró la solicitud de reunión.");
+    public static readonly Error InvalidMeetingData=new("Content.InvalidMeetingData","Los datos de la reunión no son válidos.");
+    public static readonly Error InvalidMeetingState=new("Content.InvalidMeetingState","El estado actual de la reunión no permite esta operación.");
     public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");
