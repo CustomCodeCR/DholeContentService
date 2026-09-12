@@ -1,4 +1,3 @@
-using System.Text.Json;
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
@@ -56,7 +55,10 @@ public sealed class SubmitMarketingFormCommandHandler(
         string sanitizedPayload;
         try
         {
-            sanitizedPayload = await ValidateAndSanitizePayloadAsync(form.Id, command.PayloadJson, cancellationToken);
+            var formFields = await fields.GetByFormAsync(form.Id, cancellationToken);
+            sanitizedPayload = SubmissionRules.ValidateAndSanitizePayload(
+                command.PayloadJson,
+                formFields.Select(field => (field.FieldKey, field.IsRequired)));
         }
         catch (ArgumentException)
         {
@@ -95,34 +97,5 @@ public sealed class SubmitMarketingFormCommandHandler(
             submission.Id,
             submission.SubmittedAtUtc,
             form.SuccessMessage));
-    }
-
-    private async Task<string> ValidateAndSanitizePayloadAsync(
-        Guid formId,
-        string payloadJson,
-        CancellationToken cancellationToken)
-    {
-        using var document = JsonDocument.Parse(payloadJson);
-        if (document.RootElement.ValueKind != JsonValueKind.Object)
-            throw new ArgumentException("Payload must be a JSON object.", nameof(payloadJson));
-
-        var formFields = await fields.GetByFormAsync(formId, cancellationToken);
-        var definitions = formFields.ToDictionary(field => field.FieldKey, StringComparer.OrdinalIgnoreCase);
-        var sanitized = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-
-        foreach (var property in document.RootElement.EnumerateObject())
-        {
-            if (!definitions.TryGetValue(property.Name, out var definition))
-                throw new ArgumentException("Payload contains a field that is not declared by the form.", nameof(payloadJson));
-            sanitized[definition.FieldKey] = property.Value.Clone();
-        }
-
-        foreach (var field in formFields.Where(field => field.IsRequired))
-        {
-            if (!sanitized.TryGetValue(field.FieldKey, out var value) || !SubmissionRules.HasMeaningfulValue(value))
-                throw new ArgumentException($"Required field '{field.FieldKey}' is missing.", nameof(payloadJson));
-        }
-
-        return JsonSerializer.Serialize(sanitized);
     }
 }
