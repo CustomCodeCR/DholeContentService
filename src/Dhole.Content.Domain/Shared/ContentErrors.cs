@@ -40,6 +40,11 @@ public static class ContentErrors
     public static readonly Error CollectionCodeAlreadyExists=new("Content.CollectionCodeAlreadyExists","Ya existe una colección con el mismo código para este sitio.");
     public static readonly Error CollectionItemNotFound=new("Content.CollectionItemNotFound","No se encontró el elemento de la colección solicitado.");
     public static readonly Error InvalidCollectionData=new("Content.InvalidCollectionData","Los datos de la colección o de su elemento no son válidos.");
+    public static readonly Error MarketingFormNotFound=new("Content.MarketingFormNotFound","No se encontró el formulario solicitado.");
+    public static readonly Error MarketingFormKeyAlreadyExists=new("Content.MarketingFormKeyAlreadyExists","Ya existe un formulario con el mismo FormKey para este sitio.");
+    public static readonly Error MarketingFormFieldNotFound=new("Content.MarketingFormFieldNotFound","No se encontró el campo de formulario solicitado.");
+    public static readonly Error MarketingFormFieldKeyAlreadyExists=new("Content.MarketingFormFieldKeyAlreadyExists","Ya existe un campo con el mismo FieldKey en este formulario.");
+    public static readonly Error InvalidMarketingFormData=new("Content.InvalidMarketingFormData","Los datos del formulario o de su campo no son válidos.");
     public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");
