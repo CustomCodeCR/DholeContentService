@@ -66,6 +66,7 @@ public static class ContentMediaEndpoints
                     EndpointResults.FromResult(
                         await dispatcher.DispatchAsync(
                             new UpdateContentMediaCommand(
+                                contentId,
                                 id,
                                 request.Role,
                                 request.SortOrder,
@@ -89,7 +90,7 @@ public static class ContentMediaEndpoints
                     CancellationToken cancellationToken) =>
                     EndpointResults.FromResult(
                         await dispatcher.DispatchAsync(
-                            new RemoveContentMediaCommand(id, context.GetCurrentUserId()),
+                            new RemoveContentMediaCommand(contentId, id, context.GetCurrentUserId()),
                             cancellationToken),
                         context))
             .RequireScope(ContentScopeNames.Edit);
