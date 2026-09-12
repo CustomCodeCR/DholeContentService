@@ -6,6 +6,7 @@ using Dhole.Content.Application.Abstractions.Cache;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Abstractions.Slugs;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Domain.ContentItems.Enums;
 using Dhole.Content.Domain.PageBuilder;
 using Dhole.Content.Domain.Shared;
 
@@ -30,14 +31,17 @@ public sealed class UpdateContentItemCommandHandler(
             return Result.Failure(ContentErrors.ContentNotFound);
         }
 
-        string blocksJson;
-        try
+        var blocksJson = string.IsNullOrWhiteSpace(command.BlocksJson) ? "[]" : command.BlocksJson;
+        if (item.Type == ContentType.Page)
         {
-            blocksJson = PageBuilderDocument.NormalizeAndValidate(command.BlocksJson);
-        }
-        catch (ArgumentException)
-        {
-            return Result.Failure(ContentErrors.InvalidBlocksJson);
+            try
+            {
+                blocksJson = PageBuilderDocument.NormalizeAndValidate(blocksJson);
+            }
+            catch (ArgumentException)
+            {
+                return Result.Failure(ContentErrors.InvalidBlocksJson);
+            }
         }
 
         var before = ContentAuditSnapshots.From(item);
