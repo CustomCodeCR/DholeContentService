@@ -91,6 +91,7 @@ app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
 app.MapSiteSettingEndpoints();
+app.MapSiteEndpoints();
 app.MapPublicContentEndpoints();
 
 using (var scope = app.Services.CreateScope())
