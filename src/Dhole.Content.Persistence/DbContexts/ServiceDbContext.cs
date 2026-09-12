@@ -10,6 +10,7 @@ using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Forms.Entities;
 using Dhole.Content.Domain.Leads.Entities;
 using Dhole.Content.Domain.Media.Entities;
+using Dhole.Content.Domain.Meetings.Entities;
 using Dhole.Content.Domain.Navigation.Entities;
 using Dhole.Content.Domain.Placements.Entities;
 using Dhole.Content.Domain.Redirects.Entities;
@@ -49,6 +50,8 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<MarketingSubmission> MarketingSubmissions => Set<MarketingSubmission>();
     public DbSet<MarketingLead> MarketingLeads => Set<MarketingLead>();
     public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
+    public DbSet<MeetingType> MeetingTypes => Set<MeetingType>();
+    public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();
     public DbSet<ContentRedirect> Redirects => Set<ContentRedirect>();
     public DbSet<ContentReview> ContentReviews => Set<ContentReview>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
