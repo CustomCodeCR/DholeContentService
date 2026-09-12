@@ -87,6 +87,7 @@ app.UseMiddleware<AuditEndpointMiddleware>();
 app.MapGrpcService<ContentQueryGrpcService>();
 app.MapEditorEndpoints();
 app.MapContentItemEndpoints();
+app.MapContentRouteEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
