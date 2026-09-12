@@ -51,7 +51,6 @@ public sealed class UpdateSeoCommandHandler(
         }
 
         var before = ContentAuditSnapshots.From(item);
-        item.CreateRevision(command.ActorUserId, "seo-update");
         item.SetSeo(seo.Title, seo.Description, seo.Keywords, seo.CanonicalUrl, seo.Robots,
             seo.OpenGraphMediaId, seo.StructuredDataJson, command.ActorUserId);
 

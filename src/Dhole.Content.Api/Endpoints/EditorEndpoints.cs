@@ -23,101 +23,363 @@ public static class EditorEndpoints
 {
     public static IEndpointRouteBuilder MapEditorEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/content/editor").WithTags("Simple Content Editor").RequireAuthorization();
+        var group = app.MapGroup("/api/content/editor")
+            .WithTags("Simple Content Editor")
+            .RequireAuthorization();
 
-        group.MapGet("/options", () => EndpointResults.Ok(new EditorOptionsDto(
-            [new("Page", "Página"), new("News", "Noticia"), new("Banner", "Banner"), new("Announcement", "Anuncio"), new("Video", "Video")],
-            [new("Draft", "Borrador"), new("PendingReview", "Pendiente de aprobación"), new("Scheduled", "Programado"), new("Published", "Publicado"), new("Archived", "Archivado")],
-            "es-CR", "main"))).RequireScope(ContentScopeNames.View);
-
-        group.MapGet("/dashboard", async (string? siteKey, IQueryDispatcher dispatcher, CancellationToken ct) =>
-        {
-            var page = PageRequest.Create(1, 1);
-            var resolvedSiteKey = string.IsNullOrWhiteSpace(siteKey) ? "main" : siteKey.Trim();
-            async Task<long> CountAsync(ContentType? type = null, ContentStatus? status = null)
-            {
-                var result = await dispatcher.DispatchAsync(new GetContentItemsQuery(page, resolvedSiteKey, type, status, null, null), ct);
-                return result.TotalCount;
-            }
-            var pages = await CountAsync(ContentType.Page);
-            var news = await CountAsync(ContentType.News);
-            var banners = await CountAsync(ContentType.Banner);
-            var drafts = await CountAsync(status: ContentStatus.Draft);
-            var pending = await CountAsync(status: ContentStatus.PendingReview);
-            var scheduled = await CountAsync(status: ContentStatus.Scheduled);
-            var published = await CountAsync(status: ContentStatus.Published);
-            var media = await dispatcher.DispatchAsync(new GetMediaQuery(page, null, null), ct);
-            return EndpointResults.Ok(new EditorDashboardDto(pages, news, banners, media.TotalCount, drafts, pending, scheduled, published));
-        }).RequireScope(ContentScopeNames.View);
-
-        group.MapGet("/", async (int? pageNumber, int? pageSize, string? siteKey, string? type, string? status,
-            string? search, string? locale, IQueryDispatcher dispatcher, CancellationToken ct) =>
-        {
-            ContentType? parsedType = null;
-            if (!string.IsNullOrWhiteSpace(type))
-            {
-                if (!Enum.TryParse<ContentType>(type, true, out var typeValue)) return Results.BadRequest(new { message = "Tipo de contenido inválido." });
-                parsedType = typeValue;
-            }
-            ContentStatus? parsedStatus = null;
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                if (!Enum.TryParse<ContentStatus>(status, true, out var statusValue)) return Results.BadRequest(new { message = "Estado de contenido inválido." });
-                parsedStatus = statusValue;
-            }
-            var result = await dispatcher.DispatchAsync(new GetContentItemsQuery(PageRequest.Create(pageNumber ?? 1, pageSize ?? 25),
-                string.IsNullOrWhiteSpace(siteKey) ? "main" : siteKey.Trim(), parsedType, parsedStatus, search, locale), ct);
-            return EndpointResults.FromPaged(result);
-        }).RequireScope(ContentScopeNames.View);
-
-        group.MapGet("/{id:guid}", async (Guid id, IQueryDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new GetContentItemByIdQuery(id), ct), context))
+        group.MapGet(
+                "/options",
+                () => EndpointResults.Ok(
+                    new EditorOptionsDto(
+                        [
+                            new("Page", "Página"),
+                            new("News", "Noticia"),
+                            new("Banner", "Banner"),
+                            new("Announcement", "Anuncio"),
+                            new("Video", "Video"),
+                        ],
+                        [
+                            new("Draft", "Borrador"),
+                            new("PendingReview", "Pendiente de aprobación"),
+                            new("Scheduled", "Programado"),
+                            new("Published", "Publicado"),
+                            new("Archived", "Archivado"),
+                        ],
+                        "es-CR",
+                        "main"
+                    )
+                )
+            )
             .RequireScope(ContentScopeNames.View);
 
-        group.MapPost("/", async (EditorContentRequest request, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-        {
-            if (!Enum.TryParse<ContentType>(request.Type, true, out var type)) return Results.BadRequest(new { message = "Tipo de contenido inválido." });
-            var seo = request.Seo;
-            var result = await dispatcher.DispatchAsync(new CreateContentItemCommand(type.ToString(), request.Title, request.Slug,
-                request.Excerpt, "[]", request.ContentHtml, request.FeaturedMediaId, null,
-                string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale, request.SortOrder ?? 0,
-                request.IsFeatured ?? false, request.CategoryIds ?? [], seo?.Title, seo?.Description, seo?.Keywords,
-                seo?.CanonicalUrl, seo?.Robots, seo?.OpenGraphMediaId, seo?.StructuredDataJson,
-                string.IsNullOrWhiteSpace(request.SiteKey) ? "main" : request.SiteKey, request.ParentContentId,
-                request.TranslationGroupId, request.TemplateKey, request.UnpublishAtUtc, request.SitemapPriority,
-                request.SitemapChangeFrequency, context.GetCurrentUserId()), ct);
-            return EndpointResults.FromResult(result, context);
-        }).RequireScope(ContentScopeNames.Create);
+        group.MapGet(
+                "/dashboard",
+                async (
+                    string? siteKey,
+                    IQueryDispatcher dispatcher,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    var page = PageRequest.Create(1, 1);
+                    var resolvedSiteKey = string.IsNullOrWhiteSpace(siteKey) ? "main" : siteKey.Trim();
 
-        group.MapPut("/{id:guid}", async (Guid id, EditorContentRequest request, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-        {
-            var seo = request.Seo;
-            var result = await dispatcher.DispatchAsync(new UpdateContentItemCommand(id, request.Title, request.Slug, request.Excerpt,
-                "[]", request.ContentHtml, request.FeaturedMediaId, string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale,
-                request.SortOrder ?? 0, request.IsFeatured ?? false, request.CategoryIds, seo?.Title, seo?.Description,
-                seo?.Keywords, seo?.CanonicalUrl, seo?.Robots, seo?.OpenGraphMediaId, seo?.StructuredDataJson,
-                request.ParentContentId, request.TranslationGroupId, request.TemplateKey, request.UnpublishAtUtc,
-                request.SitemapPriority, request.SitemapChangeFrequency, context.GetCurrentUserId()), ct);
-            return EndpointResults.FromResult(result, context);
-        }).RequireScope(ContentScopeNames.Edit);
+                    async Task<long> CountAsync(ContentType? type = null, ContentStatus? status = null)
+                    {
+                        var result = await dispatcher.DispatchAsync(
+                            new GetContentItemsQuery(
+                                page,
+                                resolvedSiteKey,
+                                type,
+                                status,
+                                null,
+                                null
+                            ),
+                            cancellationToken
+                        );
+                        return result.TotalCount;
+                    }
 
-        group.MapPost("/{id:guid}/submit", async (Guid id, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new SubmitContentForReviewCommand(id, context.GetCurrentUserId()), ct), context))
+                    var pages = await CountAsync(ContentType.Page);
+                    var news = await CountAsync(ContentType.News);
+                    var banners = await CountAsync(ContentType.Banner);
+                    var drafts = await CountAsync(status: ContentStatus.Draft);
+                    var pending = await CountAsync(status: ContentStatus.PendingReview);
+                    var scheduled = await CountAsync(status: ContentStatus.Scheduled);
+                    var published = await CountAsync(status: ContentStatus.Published);
+                    var media = await dispatcher.DispatchAsync(
+                        new GetMediaQuery(page, null, null),
+                        cancellationToken
+                    );
+
+                    return EndpointResults.Ok(
+                        new EditorDashboardDto(
+                            pages,
+                            news,
+                            banners,
+                            media.TotalCount,
+                            drafts,
+                            pending,
+                            scheduled,
+                            published
+                        )
+                    );
+                }
+            )
+            .RequireScope(ContentScopeNames.View);
+
+        group.MapGet(
+                "/",
+                async (
+                    int? pageNumber,
+                    int? pageSize,
+                    string? siteKey,
+                    string? type,
+                    string? status,
+                    string? search,
+                    string? locale,
+                    IQueryDispatcher dispatcher,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    ContentType? parsedType = null;
+                    if (!string.IsNullOrWhiteSpace(type))
+                    {
+                        if (!Enum.TryParse<ContentType>(type, true, out var typeValue))
+                        {
+                            return Results.BadRequest(new { message = "Tipo de contenido inválido." });
+                        }
+                        parsedType = typeValue;
+                    }
+
+                    ContentStatus? parsedStatus = null;
+                    if (!string.IsNullOrWhiteSpace(status))
+                    {
+                        if (!Enum.TryParse<ContentStatus>(status, true, out var statusValue))
+                        {
+                            return Results.BadRequest(new { message = "Estado de contenido inválido." });
+                        }
+                        parsedStatus = statusValue;
+                    }
+
+                    var result = await dispatcher.DispatchAsync(
+                        new GetContentItemsQuery(
+                            PageRequest.Create(pageNumber ?? 1, pageSize ?? 25),
+                            string.IsNullOrWhiteSpace(siteKey) ? "main" : siteKey.Trim(),
+                            parsedType,
+                            parsedStatus,
+                            search,
+                            locale
+                        ),
+                        cancellationToken
+                    );
+
+                    return EndpointResults.FromPaged(result);
+                }
+            )
+            .RequireScope(ContentScopeNames.View);
+
+        group.MapGet(
+                "/{id:guid}",
+                async (
+                    Guid id,
+                    IQueryDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new GetContentItemByIdQuery(id),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
+            .RequireScope(ContentScopeNames.View);
+
+        group.MapPost(
+                "/",
+                async (
+                    EditorContentRequest request,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    if (!Enum.TryParse<ContentType>(request.Type, true, out var type))
+                    {
+                        return Results.BadRequest(new { message = "Tipo de contenido inválido." });
+                    }
+
+                    var seo = request.Seo;
+                    var result = await dispatcher.DispatchAsync(
+                        new CreateContentItemCommand(
+                            type.ToString(),
+                            request.Title,
+                            request.Slug,
+                            request.Excerpt,
+                            "[]",
+                            request.ContentHtml,
+                            request.FeaturedMediaId,
+                            null,
+                            string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale,
+                            request.SortOrder ?? 0,
+                            request.IsFeatured ?? false,
+                            request.CategoryIds ?? [],
+                            seo?.Title,
+                            seo?.Description,
+                            seo?.Keywords,
+                            seo?.CanonicalUrl,
+                            seo?.Robots,
+                            seo?.OpenGraphMediaId,
+                            seo?.StructuredDataJson,
+                            string.IsNullOrWhiteSpace(request.SiteKey) ? "main" : request.SiteKey,
+                            request.ParentContentId,
+                            request.TranslationGroupId,
+                            request.TemplateKey,
+                            request.UnpublishAtUtc,
+                            request.SitemapPriority,
+                            request.SitemapChangeFrequency,
+                            context.GetCurrentUserId()
+                        ),
+                        cancellationToken
+                    );
+
+                    return EndpointResults.FromResult(result, context);
+                }
+            )
+            .RequireScope(ContentScopeNames.Create);
+
+        group.MapPut(
+                "/{id:guid}",
+                async (
+                    Guid id,
+                    EditorContentRequest request,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    var seo = request.Seo;
+                    var result = await dispatcher.DispatchAsync(
+                        new UpdateContentItemCommand(
+                            id,
+                            request.Title,
+                            request.Slug,
+                            request.Excerpt,
+                            "[]",
+                            request.ContentHtml,
+                            request.FeaturedMediaId,
+                            string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale,
+                            request.SortOrder ?? 0,
+                            request.IsFeatured ?? false,
+                            request.CategoryIds,
+                            seo?.Title,
+                            seo?.Description,
+                            seo?.Keywords,
+                            seo?.CanonicalUrl,
+                            seo?.Robots,
+                            seo?.OpenGraphMediaId,
+                            seo?.StructuredDataJson,
+                            request.ParentContentId,
+                            request.TranslationGroupId,
+                            request.TemplateKey,
+                            request.UnpublishAtUtc,
+                            request.SitemapPriority,
+                            request.SitemapChangeFrequency,
+                            context.GetCurrentUserId()
+                        ),
+                        cancellationToken
+                    );
+
+                    return EndpointResults.FromResult(result, context);
+                }
+            )
             .RequireScope(ContentScopeNames.Edit);
-        group.MapPost("/{id:guid}/publish", async (Guid id, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new PublishContentCommand(id, context.GetCurrentUserId()), ct), context))
-            .RequireScope(ContentScopeNames.Publish);
-        group.MapPost("/{id:guid}/schedule", async (Guid id, ScheduleContentRequest request, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new ScheduleContentCommand(id, request.ScheduledAtUtc, context.GetCurrentUserId()), ct), context))
-            .RequireScope(ContentScopeNames.Publish);
-        group.MapPost("/{id:guid}/unpublish", async (Guid id, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new UnpublishContentCommand(id, context.GetCurrentUserId()), ct), context))
-            .RequireScope(ContentScopeNames.Publish);
-        group.MapPost("/{id:guid}/archive", async (Guid id, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new ArchiveContentCommand(id, context.GetCurrentUserId()), ct), context))
+
+        group.MapPost(
+                "/{id:guid}/submit",
+                async (
+                    Guid id,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new SubmitContentForReviewCommand(id, context.GetCurrentUserId()),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
             .RequireScope(ContentScopeNames.Edit);
-        group.MapDelete("/{id:guid}", async (Guid id, ICommandDispatcher dispatcher, HttpContext context, CancellationToken ct) =>
-            EndpointResults.FromResult(await dispatcher.DispatchAsync(new DeleteContentCommand(id, context.GetCurrentUserId()), ct), context))
+
+        group.MapPost(
+                "/{id:guid}/publish",
+                async (
+                    Guid id,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new PublishContentCommand(id, context.GetCurrentUserId()),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
+            .RequireScope(ContentScopeNames.Publish);
+
+        group.MapPost(
+                "/{id:guid}/schedule",
+                async (
+                    Guid id,
+                    ScheduleContentRequest request,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new ScheduleContentCommand(
+                            id,
+                            request.ScheduledAtUtc,
+                            context.GetCurrentUserId()
+                        ),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
+            .RequireScope(ContentScopeNames.Publish);
+
+        group.MapPost(
+                "/{id:guid}/unpublish",
+                async (
+                    Guid id,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new UnpublishContentCommand(id, context.GetCurrentUserId()),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
+            .RequireScope(ContentScopeNames.Publish);
+
+        group.MapPost(
+                "/{id:guid}/archive",
+                async (
+                    Guid id,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new ArchiveContentCommand(id, context.GetCurrentUserId()),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
+            .RequireScope(ContentScopeNames.Edit);
+
+        group.MapDelete(
+                "/{id:guid}",
+                async (
+                    Guid id,
+                    ICommandDispatcher dispatcher,
+                    HttpContext context,
+                    CancellationToken cancellationToken
+                ) => EndpointResults.FromResult(
+                    await dispatcher.DispatchAsync(
+                        new DeleteContentCommand(id, context.GetCurrentUserId()),
+                        cancellationToken
+                    ),
+                    context
+                )
+            )
             .RequireScope(ContentScopeNames.Delete);
 
         return app;
