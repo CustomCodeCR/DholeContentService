@@ -109,7 +109,7 @@ public static class PageBuilderDocument
 
     private static JsonArray ParseArray(string? blocksJson)
     {
-        if (string.IsNullOrWhiteSpace(blocksJson)) return [];
+        if (string.IsNullOrWhiteSpace(blocksJson)) return new JsonArray();
         try
         {
             var node = JsonNode.Parse(blocksJson);
@@ -123,7 +123,7 @@ public static class PageBuilderDocument
 
     private static JsonObject ParseData(string? dataJson)
     {
-        if (string.IsNullOrWhiteSpace(dataJson)) return [];
+        if (string.IsNullOrWhiteSpace(dataJson)) return new JsonObject();
         try
         {
             var node = JsonNode.Parse(dataJson);
