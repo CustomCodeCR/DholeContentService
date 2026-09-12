@@ -45,6 +45,9 @@ public static class ContentErrors
     public static readonly Error MarketingFormFieldNotFound=new("Content.MarketingFormFieldNotFound","No se encontró el campo de formulario solicitado.");
     public static readonly Error MarketingFormFieldKeyAlreadyExists=new("Content.MarketingFormFieldKeyAlreadyExists","Ya existe un campo con el mismo FieldKey en este formulario.");
     public static readonly Error InvalidMarketingFormData=new("Content.InvalidMarketingFormData","Los datos del formulario o de su campo no son válidos.");
+    public static readonly Error MarketingFormNotActive=new("Content.MarketingFormNotActive","El formulario no está activo para recibir envíos.");
+    public static readonly Error MarketingSubmissionNotFound=new("Content.MarketingSubmissionNotFound","No se encontró el submission solicitado.");
+    public static readonly Error InvalidMarketingSubmissionData=new("Content.InvalidMarketingSubmissionData","Los datos enviados no cumplen la definición del formulario.");
     public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");
