@@ -6,6 +6,7 @@ using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Contracts.Submissions;
 using Dhole.Content.Domain.Forms;
 using Dhole.Content.Domain.Shared;
+using Dhole.Content.Domain.Submissions;
 using Dhole.Content.Domain.Submissions.Entities;
 
 namespace Dhole.Content.Application.Submissions;
@@ -86,10 +87,6 @@ public sealed class SubmitMarketingFormCommandHandler(
         {
             return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingSubmissionData);
         }
-        catch (ArgumentOutOfRangeException)
-        {
-            return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingSubmissionData);
-        }
 
         await submissions.AddAsync(submission, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -122,7 +119,7 @@ public sealed class SubmitMarketingFormCommandHandler(
 
         foreach (var field in formFields.Where(field => field.IsRequired))
         {
-            if (!sanitized.TryGetValue(field.FieldKey, out var value) || !Domain.Submissions.SubmissionRules.HasMeaningfulValue(value))
+            if (!sanitized.TryGetValue(field.FieldKey, out var value) || !SubmissionRules.HasMeaningfulValue(value))
                 throw new ArgumentException($"Required field '{field.FieldKey}' is missing.", nameof(payloadJson));
         }
 
