@@ -25,16 +25,20 @@ CREATE TABLE content.content_routes (
     created_by text,
     updated_at_utc timestamptz,
     updated_by text,
+    is_deleted boolean NOT NULL DEFAULT false,
+    deleted_at_utc timestamptz,
+    deleted_by text,
     CONSTRAINT fk_content_routes_content FOREIGN KEY (content_id)
         REFERENCES content.content_items(id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX ux_content_routes_site_locale_path
-    ON content.content_routes(site_key, locale, path);
+    ON content.content_routes(site_key, locale, path)
+    WHERE is_deleted = false;
 
 CREATE UNIQUE INDEX ux_content_routes_primary
     ON content.content_routes(content_id, locale)
-    WHERE is_primary = true;
+    WHERE is_primary = true AND is_deleted = false;
 
 CREATE INDEX ix_content_routes_content
     ON content.content_routes(site_key, content_id, locale);
@@ -51,7 +55,8 @@ INSERT INTO content.content_routes (
     is_primary,
     is_active,
     created_at_utc,
-    created_by
+    created_by,
+    is_deleted
 )
 SELECT
     ci.id,
@@ -62,7 +67,8 @@ SELECT
     true,
     true,
     COALESCE(ci.created_at_utc, CURRENT_TIMESTAMP),
-    ci.created_by
+    ci.created_by,
+    false
 FROM content.content_items ci
 WHERE ci.is_deleted = false
 ON CONFLICT DO NOTHING;
