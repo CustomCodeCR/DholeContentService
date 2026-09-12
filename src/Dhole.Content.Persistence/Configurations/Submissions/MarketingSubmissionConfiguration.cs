@@ -1,4 +1,5 @@
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
+using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Forms.Entities;
 using Dhole.Content.Domain.Submissions.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -28,5 +29,6 @@ internal sealed class MarketingSubmissionConfiguration : EntityTypeConfiguration
         builder.HasIndex(x => x.CorrelationId).IsUnique().HasFilter("is_deleted = false");
         builder.HasIndex(x => x.CampaignId).HasFilter("campaign_id IS NOT NULL AND is_deleted = false");
         builder.HasOne<MarketingForm>().WithMany().HasForeignKey(x => x.FormId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ContentItem>().WithMany().HasForeignKey(x => x.ContentId).OnDelete(DeleteBehavior.SetNull);
     }
 }
