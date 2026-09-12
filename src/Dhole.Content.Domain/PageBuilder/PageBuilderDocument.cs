@@ -5,14 +5,18 @@ namespace Dhole.Content.Domain.PageBuilder;
 
 public static class PageBuilderDocument
 {
+    private static readonly string[] AllowedBlockProperties = ["id", "type", "isVisible", "data"];
+
     private static readonly string[] ForbiddenPropertyNames =
     [
-        "script", "javascript", "customjs", "customscript", "vue", "component", "rawhtml", "unsafehtml"
+        "script", "javascript", "customjs", "customscript", "vue", "component",
+        "rawhtml", "unsafehtml", "srcdoc"
     ];
 
     private static readonly string[] ForbiddenTextFragments =
     [
-        "<script", "javascript:", "onerror=", "onload=", "onclick=", "onmouseover=", "v-html", "<iframe", "<object", "<embed"
+        "<script", "javascript:", "data:text/html", "onerror", "onload", "onclick",
+        "onmouseover", "v-html", "<iframe", "<object", "<embed"
     ];
 
     public static string NormalizeAndValidate(string? blocksJson)
@@ -81,7 +85,8 @@ public static class PageBuilderDocument
             }
             case "move":
             {
-                if (!targetIndex.HasValue) throw new ArgumentException("TargetIndex es obligatorio para mover un bloque.", nameof(targetIndex));
+                if (!targetIndex.HasValue)
+                    throw new ArgumentException("TargetIndex es obligatorio para mover un bloque.", nameof(targetIndex));
                 var index = FindBlockIndex(blocks, blockId);
                 var node = blocks[index]!;
                 blocks.RemoveAt(index);
@@ -141,13 +146,22 @@ public static class PageBuilderDocument
         foreach (var node in blocks)
         {
             if (node is not JsonObject block) throw new ArgumentException("Cada bloque debe ser un objeto JSON.");
-            var id = block["id"]?.GetValue<string>();
-            var type = block["type"]?.GetValue<string>();
+
+            foreach (var pair in block)
+                if (!AllowedBlockProperties.Contains(pair.Key, StringComparer.Ordinal))
+                    throw new ArgumentException($"La propiedad '{pair.Key}' no forma parte del esquema de un bloque.");
+
+            var id = ReadString(block, "id");
+            var type = ReadString(block, "type");
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Cada bloque requiere id.");
             if (!ids.Add(id)) throw new ArgumentException("Los ids de bloques deben ser únicos.");
             if (!PageBuilderBlockTypes.IsSupported(type)) throw new ArgumentException($"Tipo de bloque no soportado: {type}.");
-            block["type"] = PageBuilderBlockTypes.Normalize(type!);
+
+            block["type"] = PageBuilderBlockTypes.Normalize(type);
             block["isVisible"] ??= true;
+            if (block["isVisible"] is not JsonValue visibility || !visibility.TryGetValue<bool>(out _))
+                throw new ArgumentException("isVisible debe ser booleano.");
+
             block["data"] ??= new JsonObject();
             if (block["data"] is not JsonObject) throw new ArgumentException("La propiedad data del bloque debe ser un objeto JSON.");
             ValidateSafeNode(block["data"]!, "data");
@@ -160,7 +174,8 @@ public static class PageBuilderDocument
         {
             foreach (var pair in obj)
             {
-                if (ForbiddenPropertyNames.Contains(pair.Key, StringComparer.OrdinalIgnoreCase))
+                if (ForbiddenPropertyNames.Contains(pair.Key, StringComparer.OrdinalIgnoreCase)
+                    || pair.Key.StartsWith("on", StringComparison.OrdinalIgnoreCase))
                     throw new ArgumentException($"La propiedad '{pair.Key}' no está permitida en Page Builder ({path}).");
                 if (pair.Value is not null) ValidateSafeNode(pair.Value, $"{path}.{pair.Key}");
             }
@@ -182,6 +197,13 @@ public static class PageBuilderDocument
         }
     }
 
+    private static string ReadString(JsonObject block, string propertyName)
+    {
+        if (block[propertyName] is JsonValue value && value.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text))
+            return text.Trim();
+        throw new ArgumentException($"{propertyName} debe ser un string no vacío.");
+    }
+
     private static JsonObject FindBlock(JsonArray blocks, string? blockId)
         => (JsonObject)blocks[FindBlockIndex(blocks, blockId)]!;
 
@@ -189,7 +211,10 @@ public static class PageBuilderDocument
     {
         if (string.IsNullOrWhiteSpace(blockId)) throw new ArgumentException("BlockId es obligatorio.", nameof(blockId));
         for (var i = 0; i < blocks.Count; i++)
-            if (blocks[i] is JsonObject block && string.Equals(block["id"]?.GetValue<string>(), blockId, StringComparison.OrdinalIgnoreCase))
+            if (blocks[i] is JsonObject block
+                && block["id"] is JsonValue idValue
+                && idValue.TryGetValue<string>(out var id)
+                && string.Equals(id, blockId, StringComparison.OrdinalIgnoreCase))
                 return i;
         throw new KeyNotFoundException("No se encontró el bloque solicitado.");
     }
