@@ -28,7 +28,9 @@ internal sealed class ContentReviewConfiguration : EntityTypeConfigurationBase<C
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.ContentId, x.SubmittedAtUtc })
-            .HasDatabaseName("ix_content_reviews_content_submitted");
+            .HasDatabaseName("ix_content_reviews_content_submitted")
+            .HasFilter("is_deleted = false")
+            .IsDescending(false, true);
         builder.HasIndex(x => x.ContentId)
             .IsUnique()
             .HasDatabaseName("ux_content_reviews_pending_content")
