@@ -33,6 +33,7 @@ public sealed class Phase4ContentRouteTests
         Assert.Equal("/es/servicios", route.Path);
         Assert.True(route.IsPrimary);
         Assert.True(route.IsActive);
+        Assert.False(route.IsDeleted);
     }
 
     [Fact]
@@ -69,12 +70,13 @@ public sealed class Phase4ContentRouteTests
             index.Properties.Select(property => property.Name)
                 .SequenceEqual(["SiteKey", "Locale", "Path"]));
         Assert.True(pathIndex.IsUnique);
+        Assert.Equal("is_deleted = false", pathIndex.GetFilter());
 
         var primaryIndex = entity.GetIndexes().Single(index =>
             index.Properties.Select(property => property.Name)
                 .SequenceEqual(["ContentId", "Locale"]));
         Assert.True(primaryIndex.IsUnique);
-        Assert.Equal("is_primary = true", primaryIndex.GetFilter());
+        Assert.Equal("is_primary = true AND is_deleted = false", primaryIndex.GetFilter());
 
         Assert.Contains(entity.GetForeignKeys(), foreignKey =>
             foreignKey.Properties.Select(property => property.Name)
