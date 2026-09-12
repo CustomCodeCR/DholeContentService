@@ -10,7 +10,7 @@ public sealed class ContentRouteRepository(ServiceDbContext db)
     : EfRepository<ContentRoute, Guid>(db), IContentRouteRepository
 {
     public Task<ContentRoute?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => db.ContentRoutes.FirstOrDefaultAsync(x => x.Id == id, ct);
+        => db.ContentRoutes.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
 
     public Task<ContentRoute?> GetByPathAsync(
         string siteKey,
@@ -23,7 +23,7 @@ public sealed class ContentRouteRepository(ServiceDbContext db)
         var culture = locale.Trim();
         var normalizedPath = ContentRoute.NormalizePath(path);
         var query = db.ContentRoutes.AsNoTracking()
-            .Where(x => x.SiteKey == site && x.Locale == culture && x.Path == normalizedPath);
+            .Where(x => !x.IsDeleted && x.SiteKey == site && x.Locale == culture && x.Path == normalizedPath);
         if (activeOnly) query = query.Where(x => x.IsActive);
         return query.FirstOrDefaultAsync(ct);
     }
@@ -32,13 +32,13 @@ public sealed class ContentRouteRepository(ServiceDbContext db)
     {
         var culture = locale.Trim();
         return db.ContentRoutes.FirstOrDefaultAsync(
-            x => x.ContentId == contentId && x.Locale == culture && x.IsPrimary,
+            x => !x.IsDeleted && x.ContentId == contentId && x.Locale == culture && x.IsPrimary,
             ct);
     }
 
     public async Task<IReadOnlyCollection<ContentRoute>> GetByContentAsync(Guid contentId, CancellationToken ct = default)
         => await db.ContentRoutes.AsNoTracking()
-            .Where(x => x.ContentId == contentId)
+            .Where(x => !x.IsDeleted && x.ContentId == contentId)
             .OrderByDescending(x => x.IsPrimary)
             .ThenBy(x => x.Locale)
             .ThenBy(x => x.Path)
@@ -55,7 +55,7 @@ public sealed class ContentRouteRepository(ServiceDbContext db)
         var culture = locale.Trim();
         var normalizedPath = ContentRoute.NormalizePath(path);
         return db.ContentRoutes.AnyAsync(
-            x => x.SiteKey == site && x.Locale == culture && x.Path == normalizedPath &&
+            x => !x.IsDeleted && x.SiteKey == site && x.Locale == culture && x.Path == normalizedPath &&
                  (!excludeId.HasValue || x.Id != excludeId.Value),
             ct);
     }
