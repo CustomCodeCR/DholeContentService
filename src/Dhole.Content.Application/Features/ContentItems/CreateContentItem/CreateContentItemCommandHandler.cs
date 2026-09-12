@@ -28,14 +28,17 @@ public sealed class CreateContentItemCommandHandler(
             return Result.Failure<Guid>(ContentErrors.InvalidContentType);
         }
 
-        string blocksJson;
-        try
+        var blocksJson = string.IsNullOrWhiteSpace(c.BlocksJson) ? "[]" : c.BlocksJson;
+        if (type == ContentType.Page)
         {
-            blocksJson = PageBuilderDocument.NormalizeAndValidate(c.BlocksJson);
-        }
-        catch (ArgumentException)
-        {
-            return Result.Failure<Guid>(ContentErrors.InvalidBlocksJson);
+            try
+            {
+                blocksJson = PageBuilderDocument.NormalizeAndValidate(blocksJson);
+            }
+            catch (ArgumentException)
+            {
+                return Result.Failure<Guid>(ContentErrors.InvalidBlocksJson);
+            }
         }
 
         var site = string.IsNullOrWhiteSpace(c.SiteKey) ? ContentConstants.DefaultSiteKey : c.SiteKey.Trim();
