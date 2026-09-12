@@ -22,5 +22,11 @@ public sealed record UpdateContentItemCommand(
     string? Robots,
     Guid? OpenGraphMediaId,
     string? StructuredDataJson,
+    Guid? ParentContentId,
+    Guid? TranslationGroupId,
+    string? TemplateKey,
+    DateTime? UnpublishAtUtc,
+    decimal? SitemapPriority,
+    string? SitemapChangeFrequency,
     Guid? UpdatedBy
 ) : ICommand<Result>;
