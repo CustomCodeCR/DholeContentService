@@ -166,17 +166,29 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
         AddDomainEvent(new ContentItemPublishedDomainEvent(Id, SiteKey, Slug, utcNow, actorUserId));
     }
 
-    public void Schedule(DateTime scheduledAtUtc, DateTime utcNow, Guid? actorUserId)
+    public void Schedule(DateTime scheduledAtUtc, DateTime? unpublishAtUtc, DateTime utcNow, Guid? actorUserId)
     {
-        EnsureNotArchived(); if (scheduledAtUtc <= utcNow) throw new ArgumentException("La fecha programada debe estar en el futuro.");
-        Status = ContentStatus.Scheduled; ScheduledAtUtc = scheduledAtUtc;
+        EnsureNotArchived();
+        if (Status != ContentStatus.PendingReview)
+            throw new InvalidOperationException("Solo contenido PendingReview puede programarse.");
+        if (scheduledAtUtc <= utcNow)
+            throw new ArgumentException("La fecha programada debe estar en el futuro.", nameof(scheduledAtUtc));
+        if (unpublishAtUtc.HasValue && unpublishAtUtc.Value <= scheduledAtUtc)
+            throw new ArgumentException("La fecha de despublicación debe ser posterior a la publicación programada.", nameof(unpublishAtUtc));
+
+        Status = ContentStatus.Scheduled;
+        ScheduledAtUtc = scheduledAtUtc;
+        UnpublishAtUtc = unpublishAtUtc;
         MarkAsUpdated(utcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemScheduledDomainEvent(Id, SiteKey, Slug, scheduledAtUtc, actorUserId));
     }
 
     public void Unpublish(Guid? actorUserId)
     {
-        EnsureNotArchived(); Status = ContentStatus.Draft; ScheduledAtUtc = null;
+        EnsureNotArchived();
+        Status = ContentStatus.Draft;
+        ScheduledAtUtc = null;
+        UnpublishAtUtc = null;
         MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemUnpublishedDomainEvent(Id, SiteKey, Slug, actorUserId));
     }
