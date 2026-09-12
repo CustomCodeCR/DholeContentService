@@ -4,6 +4,7 @@ using CustomCodeFramework.Core.Pagination;
 using CustomCodeFramework.Cqrs.Dispatching;
 using Dhole.Content.Api.Authorization;
 using Dhole.Content.Api.Extensions;
+using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Media.DeleteMedia;
 using Dhole.Content.Application.Media.GetMedia;
 using Dhole.Content.Application.Media.RegisterMedia;
@@ -36,6 +37,9 @@ public static class MediaEndpoints
                     )
                 )
             )
+            .RequireScope(ContentScopeNames.View);
+
+        group.MapGet("/{id:guid}/content", PreviewAsync)
             .RequireScope(ContentScopeNames.View);
 
         group.MapPost(
@@ -109,6 +113,33 @@ public static class MediaEndpoints
             .RequireScope(ContentScopeNames.MediaUpload);
 
         return app;
+    }
+
+    private static async Task<IResult> PreviewAsync(
+        Guid id,
+        IMediaReferenceRepository mediaReferences,
+        IHttpClientFactory clients,
+        CancellationToken cancellationToken)
+    {
+        var media = await mediaReferences.GetByIdAsync(id, cancellationToken);
+        if (media is null || media.IsDeleted)
+            return Results.Problem("No se encontró el recurso multimedia.", statusCode: 404);
+
+        var client = clients.CreateClient("DholeStorage");
+        using var response = await client.GetAsync(
+            $"api/v1/storage/files/{media.StorageFileId}/content",
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Results.Problem(
+                "No se pudo obtener la vista previa desde Storage.",
+                statusCode: (int)response.StatusCode);
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? media.ContentType;
+        return Results.File(bytes, contentType, media.FileName, enableRangeProcessing: true);
     }
 
     private static async Task<IResult> UploadAsync(
