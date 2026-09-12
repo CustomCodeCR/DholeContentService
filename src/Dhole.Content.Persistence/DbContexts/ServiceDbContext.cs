@@ -9,6 +9,7 @@ using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Media.Entities;
 using Dhole.Content.Domain.Navigation.Entities;
 using Dhole.Content.Domain.Placements.Entities;
+using Dhole.Content.Domain.Redirects.Entities;
 using Dhole.Content.Domain.Routes.Entities;
 using Dhole.Content.Domain.Settings.Entities;
 using Dhole.Content.Domain.Sites.Entities;
@@ -38,6 +39,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<PlacementItem> PlacementItems => Set<PlacementItem>();
     public DbSet<ContentCollection> Collections => Set<ContentCollection>();
     public DbSet<ContentCollectionItem> CollectionItems => Set<ContentCollectionItem>();
+    public DbSet<ContentRedirect> Redirects => Set<ContentRedirect>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 

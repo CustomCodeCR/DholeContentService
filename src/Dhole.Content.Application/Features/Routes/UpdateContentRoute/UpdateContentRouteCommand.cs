@@ -10,5 +10,6 @@ public sealed record UpdateContentRouteCommand(
     string Path,
     bool IsPrimary,
     bool IsActive,
-    Guid? ActorUserId
+    Guid? ActorUserId,
+    bool CreatePermanentRedirect = false
 ) : ICommand<Result>;
