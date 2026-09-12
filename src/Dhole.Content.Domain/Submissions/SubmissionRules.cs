@@ -28,30 +28,37 @@ public static class SubmissionRules
         string payloadJson,
         IEnumerable<(string FieldKey, bool IsRequired)> fieldDefinitions)
     {
-        using var document = JsonDocument.Parse(payloadJson);
-        if (document.RootElement.ValueKind != JsonValueKind.Object)
-            throw new ArgumentException("Payload must be a JSON object.", nameof(payloadJson));
-
-        var definitions = fieldDefinitions.ToDictionary(
-            definition => definition.FieldKey,
-            definition => definition,
-            StringComparer.OrdinalIgnoreCase);
-        var sanitized = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-
-        foreach (var property in document.RootElement.EnumerateObject())
+        try
         {
-            if (!definitions.TryGetValue(property.Name, out var definition))
-                throw new ArgumentException("Payload contains a field that is not declared by the form.", nameof(payloadJson));
-            sanitized[definition.FieldKey] = property.Value.Clone();
-        }
+            using var document = JsonDocument.Parse(payloadJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+                throw new ArgumentException("Payload must be a JSON object.", nameof(payloadJson));
 
-        foreach (var definition in definitions.Values.Where(definition => definition.IsRequired))
+            var definitions = fieldDefinitions.ToDictionary(
+                definition => definition.FieldKey,
+                definition => definition,
+                StringComparer.OrdinalIgnoreCase);
+            var sanitized = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (!definitions.TryGetValue(property.Name, out var definition))
+                    throw new ArgumentException("Payload contains a field that is not declared by the form.", nameof(payloadJson));
+                sanitized[definition.FieldKey] = property.Value.Clone();
+            }
+
+            foreach (var definition in definitions.Values.Where(definition => definition.IsRequired))
+            {
+                if (!sanitized.TryGetValue(definition.FieldKey, out var value) || !HasMeaningfulValue(value))
+                    throw new ArgumentException($"Required field '{definition.FieldKey}' is missing.", nameof(payloadJson));
+            }
+
+            return JsonSerializer.Serialize(sanitized);
+        }
+        catch (JsonException exception)
         {
-            if (!sanitized.TryGetValue(definition.FieldKey, out var value) || !HasMeaningfulValue(value))
-                throw new ArgumentException($"Required field '{definition.FieldKey}' is missing.", nameof(payloadJson));
+            throw new ArgumentException("Payload JSON is invalid.", nameof(payloadJson), exception);
         }
-
-        return JsonSerializer.Serialize(sanitized);
     }
 
     public static string? NormalizeOptionalText(string? value, int maxLength)
