@@ -12,6 +12,9 @@ public static class ContentErrors
     public static readonly Error TaxonomySlugAlreadyExists=new("Content.TaxonomySlugAlreadyExists","Ya existe una categoría o etiqueta con ese slug.");
     public static readonly Error MediaNotFound=new("Content.MediaNotFound","No se encontró el recurso multimedia solicitado.");
     public static readonly Error StorageFileAlreadyRegistered=new("Content.StorageFileAlreadyRegistered","El archivo ya está registrado en la biblioteca multimedia.");
+    public static readonly Error ContentMediaNotFound=new("Content.ContentMediaNotFound","No se encontró la asociación multimedia solicitada.");
+    public static readonly Error ContentMediaAlreadyExists=new("Content.ContentMediaAlreadyExists","El recurso multimedia ya está asociado al contenido con ese rol.");
+    public static readonly Error InvalidContentMedia=new("Content.InvalidContentMedia","Los datos de la asociación multimedia no son válidos.");
     public static readonly Error MenuNotFound=new("Content.MenuNotFound","No se encontró el menú solicitado.");
     public static readonly Error SettingNotFound=new("Content.SettingNotFound","No se encontró la configuración solicitada.");
     public static readonly Error InvalidJson=new("Content.InvalidJson","El contenido JSON no es válido.");
