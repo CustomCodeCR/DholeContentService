@@ -92,6 +92,7 @@ app.MapPageBuilderEndpoints();
 app.MapContentMediaEndpoints();
 app.MapPlacementEndpoints();
 app.MapCollectionEndpoints();
+app.MapSeoEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();

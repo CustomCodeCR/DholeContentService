@@ -9,6 +9,7 @@ using Dhole.Content.Application.Auditing;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.ContentItems.Enums;
 using Dhole.Content.Domain.PageBuilder;
+using Dhole.Content.Domain.Seo;
 using Dhole.Content.Domain.Shared;
 
 namespace Dhole.Content.Application.ContentItems.CreateContentItem;
@@ -41,6 +42,24 @@ public sealed class CreateContentItemCommandHandler(
             }
         }
 
+        NormalizedSeo seo;
+        try
+        {
+            seo = SeoRules.Normalize(
+                c.SeoTitle,
+                c.SeoDescription,
+                c.SeoKeywords,
+                c.CanonicalUrl,
+                c.Robots,
+                c.OpenGraphMediaId,
+                c.StructuredDataJson
+            );
+        }
+        catch (ArgumentException)
+        {
+            return Result.Failure<Guid>(ContentErrors.InvalidSeoData);
+        }
+
         var site = string.IsNullOrWhiteSpace(c.SiteKey) ? ContentConstants.DefaultSiteKey : c.SiteKey.Trim();
         var locale = string.IsNullOrWhiteSpace(c.Locale) ? ContentConstants.DefaultLocale : c.Locale.Trim();
         var slug = string.IsNullOrWhiteSpace(c.Slug)
@@ -65,7 +84,7 @@ public sealed class CreateContentItemCommandHandler(
             c.SitemapPriority,
             c.SitemapChangeFrequency,
             c.CreatedBy);
-        item.SetSeo(c.SeoTitle, c.SeoDescription, c.SeoKeywords, c.CanonicalUrl, c.Robots, c.OpenGraphMediaId, c.StructuredDataJson, c.CreatedBy);
+        item.SetSeo(seo.Title, seo.Description, seo.Keywords, seo.CanonicalUrl, seo.Robots, seo.OpenGraphMediaId, seo.StructuredDataJson, c.CreatedBy);
         item.ReplaceTaxonomies(c.TaxonomyTermIds);
 
         await contents.AddAsync(item, ct);

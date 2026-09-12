@@ -8,6 +8,7 @@ using Dhole.Content.Application.Abstractions.Slugs;
 using Dhole.Content.Application.Auditing;
 using Dhole.Content.Domain.ContentItems.Enums;
 using Dhole.Content.Domain.PageBuilder;
+using Dhole.Content.Domain.Seo;
 using Dhole.Content.Domain.Shared;
 
 namespace Dhole.Content.Application.ContentItems.UpdateContentItem;
@@ -42,6 +43,24 @@ public sealed class UpdateContentItemCommandHandler(
             {
                 return Result.Failure(ContentErrors.InvalidBlocksJson);
             }
+        }
+
+        NormalizedSeo seo;
+        try
+        {
+            seo = SeoRules.Normalize(
+                command.SeoTitle,
+                command.SeoDescription,
+                command.SeoKeywords,
+                command.CanonicalUrl,
+                command.Robots,
+                command.OpenGraphMediaId,
+                command.StructuredDataJson
+            );
+        }
+        catch (ArgumentException)
+        {
+            return Result.Failure(ContentErrors.InvalidSeoData);
         }
 
         var before = ContentAuditSnapshots.From(item);
@@ -84,13 +103,13 @@ public sealed class UpdateContentItemCommandHandler(
         );
 
         item.SetSeo(
-            command.SeoTitle,
-            command.SeoDescription,
-            command.SeoKeywords,
-            command.CanonicalUrl,
-            command.Robots,
-            command.OpenGraphMediaId,
-            command.StructuredDataJson,
+            seo.Title,
+            seo.Description,
+            seo.Keywords,
+            seo.CanonicalUrl,
+            seo.Robots,
+            seo.OpenGraphMediaId,
+            seo.StructuredDataJson,
             command.UpdatedBy
         );
 

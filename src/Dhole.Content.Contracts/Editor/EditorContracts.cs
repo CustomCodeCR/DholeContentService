@@ -5,7 +5,9 @@ public sealed record EditorSeoRequest(
     string? Description,
     string? Keywords,
     string? CanonicalUrl,
-    Guid? OpenGraphMediaId
+    string? Robots,
+    Guid? OpenGraphMediaId,
+    string? StructuredDataJson
 );
 
 public sealed record EditorContentRequest(
