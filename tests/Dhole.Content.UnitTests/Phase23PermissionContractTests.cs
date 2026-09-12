@@ -1,4 +1,5 @@
 using Dhole.Content.Api.Authorization;
+using Xunit;
 
 namespace Dhole.Content.UnitTests;
 
