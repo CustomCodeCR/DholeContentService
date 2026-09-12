@@ -1,14 +1,22 @@
+using Dhole.Content.Domain.ContentItems.Entities;
+using Dhole.Content.Domain.ContentItems.Enums;
 using Xunit;
-using Dhole.Content.Domain.Content;
 
 namespace Dhole.Content.UnitTests;
 
 public sealed class ContentItemTests
 {
     [Fact]
-    public void Create_StartsAsDraftAndNormalizesSlug()
+    public void Create_StartsAsDraftAndKeepsNormalizedSlug()
     {
-        var item = ContentItem.Create(ContentType.News, "Nueva ruta", "Nueva Ruta Shanghai", "[]", null, Guid.NewGuid());
+        var item = ContentItem.Create(
+            ContentType.News,
+            "Nueva ruta",
+            "nueva-ruta-shanghai",
+            "[]",
+            null,
+            Guid.NewGuid());
+
         Assert.Equal(ContentStatus.Draft, item.Status);
         Assert.Equal("nueva-ruta-shanghai", item.Slug);
     }
@@ -18,7 +26,9 @@ public sealed class ContentItemTests
     {
         var item = ContentItem.Create(ContentType.Page, "Inicio", "inicio", "[]", null, Guid.NewGuid());
         var now = DateTime.UtcNow;
+
         item.Publish(now, Guid.NewGuid());
+
         Assert.Equal(ContentStatus.Published, item.Status);
         Assert.Equal(now, item.PublishedAtUtc);
     }
@@ -28,9 +38,11 @@ public sealed class ContentItemTests
     {
         var actor = Guid.NewGuid();
         var item = ContentItem.Create(ContentType.Post, "Uno", "uno", "[]", null, actor);
-        var revision = item.Snapshot(actor, "test");
+        var revision = item.CreateRevision(actor, "test");
+
         item.Update("Dos", "dos", null, "[]", null, null, 0, false, null, actor);
-        item.Restore(revision, actor);
+        item.RestoreRevision(revision, actor);
+
         Assert.Equal("Uno", item.Title);
         Assert.Equal(ContentStatus.Draft, item.Status);
     }

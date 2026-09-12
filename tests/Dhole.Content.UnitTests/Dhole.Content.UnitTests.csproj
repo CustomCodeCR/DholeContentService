@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dhole.Content.Domain\Dhole.Content.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Dhole.Content.Persistence\Dhole.Content.Persistence.csproj" />
   </ItemGroup>
 </Project>
