@@ -1,6 +1,7 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
+using Dhole.Content.Application.Abstractions.Messaging;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Domain.Meetings.Entities;
 using Dhole.Content.Domain.Shared;
@@ -82,8 +83,14 @@ public sealed class DeleteMeetingTypeCommandHandler(IMeetingTypeRepository meeti
     }
 }
 
-public sealed class CreateMeetingRequestCommandHandler(IMeetingTypeRepository meetingTypes, IMarketingLeadRepository leads,
-    IMarketingSubmissionRepository submissions, IMarketingFormRepository forms, IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+public sealed class CreateMeetingRequestCommandHandler(
+    IMeetingTypeRepository meetingTypes,
+    IMarketingLeadRepository leads,
+    IMarketingSubmissionRepository submissions,
+    IMarketingFormRepository forms,
+    IMeetingRequestRepository requests,
+    IIntegrationEventOutboxWriter outbox,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateMeetingRequestCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> HandleAsync(CreateMeetingRequestCommand command, CancellationToken cancellationToken = default)
@@ -116,6 +123,14 @@ public sealed class CreateMeetingRequestCommandHandler(IMeetingTypeRepository me
             var request = MeetingRequest.Create(type.Id, command.LeadId, command.SubmissionId, command.RequestedStartUtc,
                 requestedEnd, command.TimeZone, command.Subject, command.Message, type.AssignedUserId, command.ActorUserId);
             await requests.AddAsync(request, cancellationToken);
+            await outbox.WriteAsync(
+                MeetingNotificationIntegration.RequestedEventName,
+                MeetingNotificationIntegration.RequestedEventType,
+                new MeetingRequestedNotificationEvent(
+                    request.Id, type.Id, type.SiteKey, type.Name, type.MeetingMode, request.LeadId, request.SubmissionId,
+                    request.RequestedStartUtc, request.RequestedEndUtc, request.TimeZone, request.Subject,
+                    request.AssignedUserId, type.AssignedTeamKey),
+                cancellationToken: cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success(request.Id);
         }
@@ -146,13 +161,67 @@ public sealed class MarkMeetingPendingCommandHandler(IMeetingRequestRepository r
             item => item.MarkPendingConfirmation(command.AssignedUserId, command.ActorUserId), cancellationToken);
 }
 
-public sealed class ConfirmMeetingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+public sealed class ConfirmMeetingCommandHandler(
+    IMeetingRequestRepository requests,
+    IMeetingTypeRepository meetingTypes,
+    IMarketingLeadRepository leads,
+    IMarketingSubmissionRepository submissions,
+    IMarketingFormFieldRepository formFields,
+    IIntegrationEventOutboxWriter outbox,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<ConfirmMeetingCommand, Result>
 {
-    public Task<Result> HandleAsync(ConfirmMeetingCommand command, CancellationToken cancellationToken = default)
-        => MeetingRequestCommandHelpers.ApplyAsync(requests, unitOfWork, command.Id,
-            item => item.Confirm(command.ConfirmedStartUtc, command.ConfirmedEndUtc, command.AssignedUserId,
-                command.ExternalProvider, command.ExternalEventId, command.MeetingUrl, command.ActorUserId), cancellationToken);
+    public async Task<Result> HandleAsync(ConfirmMeetingCommand command, CancellationToken cancellationToken = default)
+    {
+        var request = await requests.GetByIdAsync(command.Id, cancellationToken);
+        if (request is null || request.IsDeleted) return Result.Failure(ContentErrors.MeetingRequestNotFound);
+        var type = await meetingTypes.GetByIdAsync(request.MeetingTypeId, cancellationToken);
+        if (type is null || type.IsDeleted) return Result.Failure(ContentErrors.MeetingTypeNotFound);
+
+        string? clientEmail = null;
+        string? clientName = null;
+        if (request.LeadId.HasValue)
+        {
+            var lead = await leads.GetByIdAsync(request.LeadId.Value, cancellationToken);
+            if (lead is not null && !lead.IsDeleted)
+            {
+                clientEmail = lead.Email;
+                clientName = string.Join(' ', new[] { lead.FirstName, lead.LastName }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                if (string.IsNullOrWhiteSpace(clientName)) clientName = null;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(clientEmail) && request.SubmissionId.HasValue)
+        {
+            var submission = await submissions.GetByIdAsync(request.SubmissionId.Value, cancellationToken);
+            if (submission is not null && !submission.IsDeleted)
+            {
+                var fields = await formFields.GetByFormAsync(submission.FormId, cancellationToken);
+                clientEmail = MeetingNotificationIntegration.ResolveSubmissionEmail(submission.PayloadJson, fields);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(clientEmail))
+            return Result.Failure(ContentErrors.InvalidMeetingData);
+
+        try
+        {
+            request.Confirm(command.ConfirmedStartUtc, command.ConfirmedEndUtc, command.AssignedUserId,
+                command.ExternalProvider, command.ExternalEventId, command.MeetingUrl, command.ActorUserId);
+            await outbox.WriteAsync(
+                MeetingNotificationIntegration.ConfirmedEventName,
+                MeetingNotificationIntegration.ConfirmedEventType,
+                new MeetingConfirmedNotificationEvent(
+                    request.Id, type.Id, type.SiteKey, type.Name, type.MeetingMode, request.LeadId, request.SubmissionId,
+                    clientEmail, clientName, request.ConfirmedStartUtc!.Value, request.ConfirmedEndUtc!.Value,
+                    request.TimeZone, request.Subject, request.MeetingUrl, request.ExternalProvider, request.ExternalEventId),
+                cancellationToken: cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (InvalidOperationException) { return Result.Failure(ContentErrors.InvalidMeetingState); }
+        catch (ArgumentException) { return Result.Failure(ContentErrors.InvalidMeetingData); }
+    }
 }
 
 public sealed class RejectMeetingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
