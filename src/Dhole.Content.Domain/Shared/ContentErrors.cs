@@ -29,4 +29,10 @@ public static class ContentErrors
     public static readonly Error PageBuilderOnlyPages=new("Content.PageBuilderOnlyPages","El Page Builder solo puede utilizarse con contenido de tipo Page.");
     public static readonly Error PageBuilderBlockNotFound=new("Content.PageBuilderBlockNotFound","No se encontró el bloque solicitado.");
     public static readonly Error InvalidPageBuilderOperation=new("Content.InvalidPageBuilderOperation","La operación o los datos del Page Builder no son válidos o contienen contenido no permitido.");
+    public static readonly Error PlacementNotFound=new("Content.PlacementNotFound","No se encontró el placement solicitado.");
+    public static readonly Error PlacementCodeAlreadyExists=new("Content.PlacementCodeAlreadyExists","Ya existe un placement con el mismo código para este sitio.");
+    public static readonly Error PlacementItemNotFound=new("Content.PlacementItemNotFound","No se encontró el contenido asociado al placement.");
+    public static readonly Error PlacementItemAlreadyExists=new("Content.PlacementItemAlreadyExists","El contenido ya está asociado a este placement.");
+    public static readonly Error PlacementContentNotAllowed=new("Content.PlacementContentNotAllowed","El contenido no pertenece al mismo sitio o su tipo no está permitido por el placement.");
+    public static readonly Error InvalidPlacementData=new("Content.InvalidPlacementData","Los datos del placement o de su contenido asociado no son válidos.");
 }
