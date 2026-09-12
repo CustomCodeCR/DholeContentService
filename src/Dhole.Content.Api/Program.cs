@@ -88,6 +88,7 @@ app.MapGrpcService<ContentQueryGrpcService>();
 app.MapEditorEndpoints();
 app.MapContentItemEndpoints();
 app.MapContentRouteEndpoints();
+app.MapPageBuilderEndpoints();
 app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();

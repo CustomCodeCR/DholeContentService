@@ -8,6 +8,7 @@ using Dhole.Content.Application.Abstractions.Slugs;
 using Dhole.Content.Application.Auditing;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.ContentItems.Enums;
+using Dhole.Content.Domain.PageBuilder;
 using Dhole.Content.Domain.Shared;
 
 namespace Dhole.Content.Application.ContentItems.CreateContentItem;
@@ -27,6 +28,19 @@ public sealed class CreateContentItemCommandHandler(
             return Result.Failure<Guid>(ContentErrors.InvalidContentType);
         }
 
+        var blocksJson = string.IsNullOrWhiteSpace(c.BlocksJson) ? "[]" : c.BlocksJson;
+        if (type == ContentType.Page)
+        {
+            try
+            {
+                blocksJson = PageBuilderDocument.NormalizeAndValidate(blocksJson);
+            }
+            catch (ArgumentException)
+            {
+                return Result.Failure<Guid>(ContentErrors.InvalidBlocksJson);
+            }
+        }
+
         var site = string.IsNullOrWhiteSpace(c.SiteKey) ? ContentConstants.DefaultSiteKey : c.SiteKey.Trim();
         var locale = string.IsNullOrWhiteSpace(c.Locale) ? ContentConstants.DefaultLocale : c.Locale.Trim();
         var slug = string.IsNullOrWhiteSpace(c.Slug)
@@ -41,8 +55,8 @@ public sealed class CreateContentItemCommandHandler(
             return Result.Failure<Guid>(ContentErrors.ContentSlugAlreadyExists);
         }
 
-        var item = ContentItem.Create(type, c.Title, slug, c.BlocksJson, c.AuthorUserId, c.CreatedBy, site, locale);
-        item.Update(c.Title, slug, c.Excerpt, c.BlocksJson, c.RenderedHtml, c.FeaturedMediaId, c.SortOrder, c.IsFeatured, locale, c.CreatedBy);
+        var item = ContentItem.Create(type, c.Title, slug, blocksJson, c.AuthorUserId, c.CreatedBy, site, locale);
+        item.Update(c.Title, slug, c.Excerpt, blocksJson, c.RenderedHtml, c.FeaturedMediaId, c.SortOrder, c.IsFeatured, locale, c.CreatedBy);
         item.ConfigureCmsMetadata(
             c.ParentContentId,
             c.TranslationGroupId,
