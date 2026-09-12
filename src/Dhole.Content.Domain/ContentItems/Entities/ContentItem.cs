@@ -69,6 +69,7 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
     public void Update(string title, string slug, string? excerpt, string blocksJson, string? renderedHtml, Guid? featuredMediaId, int sortOrder, bool isFeatured, string? locale, Guid? actorUserId)
     {
         EnsureNotArchived();
+        EnsureNotPendingReview();
         Title = title.Trim(); Slug = slug.Trim().ToLowerInvariant(); Excerpt = Normalize(excerpt);
         BlocksJson = string.IsNullOrWhiteSpace(blocksJson) ? "[]" : blocksJson; RenderedHtml = Normalize(renderedHtml);
         FeaturedMediaId = featuredMediaId; SortOrder = sortOrder; IsFeatured = isFeatured;
@@ -87,6 +88,7 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
         Guid? actorUserId)
     {
         EnsureNotArchived();
+        EnsureNotPendingReview();
         if (parentContentId == Id)
         {
             throw new ArgumentException("El contenido no puede ser su propio padre.", nameof(parentContentId));
@@ -108,6 +110,8 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
 
     public void SetSeo(string? title, string? description, string? keywords, string? canonicalUrl, string? robots, Guid? openGraphMediaId, string? structuredDataJson, Guid? actorUserId)
     {
+        EnsureNotArchived();
+        EnsureNotPendingReview();
         SeoTitle = Normalize(title); SeoDescription = Normalize(description); SeoKeywords = Normalize(keywords);
         CanonicalUrl = Normalize(canonicalUrl); Robots = Normalize(robots) ?? "index,follow";
         OpenGraphMediaId = openGraphMediaId; StructuredDataJson = Normalize(structuredDataJson);
@@ -124,20 +128,40 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
 
     public void ReplaceTaxonomies(IEnumerable<Guid> taxonomyTermIds)
     {
+        EnsureNotPendingReview();
         _taxonomies.Clear();
         foreach (var id in taxonomyTermIds.Distinct()) _taxonomies.Add(ContentTaxonomy.Create(Id, id));
     }
 
     public void SubmitForReview(Guid? actorUserId)
     {
-        EnsureNotArchived(); Status = ContentStatus.PendingReview; ScheduledAtUtc = null;
+        EnsureNotArchived();
+        if (Status is not ContentStatus.Draft and not ContentStatus.Rejected)
+            throw new InvalidOperationException("Solo contenido Draft o Rejected puede enviarse a revisión.");
+        Status = ContentStatus.PendingReview;
+        ScheduledAtUtc = null;
         MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemSubmittedForReviewDomainEvent(Id, SiteKey, Slug, actorUserId));
     }
 
+    public void RejectReview(Guid? actorUserId)
+    {
+        EnsureNotArchived();
+        if (Status != ContentStatus.PendingReview)
+            throw new InvalidOperationException("Solo contenido PendingReview puede rechazarse.");
+        Status = ContentStatus.Rejected;
+        ScheduledAtUtc = null;
+        MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
+    }
+
     public void Publish(DateTime utcNow, Guid? actorUserId)
     {
-        EnsureNotArchived(); Status = ContentStatus.Published; PublishedAtUtc = utcNow; ScheduledAtUtc = null;
+        EnsureNotArchived();
+        if (Status is not ContentStatus.PendingReview and not ContentStatus.Scheduled)
+            throw new InvalidOperationException("Solo contenido aprobado o programado puede publicarse.");
+        Status = ContentStatus.Published;
+        PublishedAtUtc = utcNow;
+        ScheduledAtUtc = null;
         MarkAsUpdated(utcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemPublishedDomainEvent(Id, SiteKey, Slug, utcNow, actorUserId));
     }
@@ -166,6 +190,7 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
 
     public void RestoreRevision(ContentRevision revision, Guid? actorUserId)
     {
+        EnsureNotPendingReview();
         Title = revision.Title; Slug = revision.Slug; Excerpt = revision.Excerpt; BlocksJson = revision.BlocksJson;
         RenderedHtml = revision.RenderedHtml; FeaturedMediaId = revision.FeaturedMediaId; SeoTitle = revision.SeoTitle;
         SeoDescription = revision.SeoDescription; SeoKeywords = revision.SeoKeywords; CanonicalUrl = revision.CanonicalUrl;
@@ -182,5 +207,6 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
     }
 
     private void EnsureNotArchived() { if (Status == ContentStatus.Archived) throw new InvalidOperationException("El contenido archivado no puede modificarse."); }
+    private void EnsureNotPendingReview() { if (Status == ContentStatus.PendingReview) throw new InvalidOperationException("El contenido pendiente de revisión no puede modificarse hasta ser aprobado o rechazado."); }
     private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -32,6 +32,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<ICollectionItemRepository, CollectionItemRepository>();
         services.AddScoped<ISeoRepository, SeoRepository>();
         services.AddScoped<IRedirectRepository, RedirectRepository>();
+        services.AddScoped<IContentReviewRepository, ContentReviewRepository>();
         services.AddScoped<IIntegrationEventOutboxWriter, IntegrationEventOutboxWriter>();
         services.AddScoped<IContentAuditService, ContentAuditService>();
         return services;

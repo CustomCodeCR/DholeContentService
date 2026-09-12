@@ -32,6 +32,11 @@ public sealed class UpdateContentItemCommandHandler(
             return Result.Failure(ContentErrors.ContentNotFound);
         }
 
+        if (item.Status == ContentStatus.PendingReview)
+        {
+            return Result.Failure(ContentErrors.InvalidContentState);
+        }
+
         var blocksJson = string.IsNullOrWhiteSpace(command.BlocksJson) ? "[]" : command.BlocksJson;
         if (item.Type == ContentType.Page)
         {

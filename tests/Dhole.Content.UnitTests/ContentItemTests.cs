@@ -22,11 +22,12 @@ public sealed class ContentItemTests
     }
 
     [Fact]
-    public void Publish_MakesContentPublic()
+    public void Publish_AfterReview_MakesContentPublic()
     {
         var item = ContentItem.Create(ContentType.Page, "Inicio", "inicio", "[]", null, Guid.NewGuid());
         var now = DateTime.UtcNow;
 
+        item.SubmitForReview(Guid.NewGuid());
         item.Publish(now, Guid.NewGuid());
 
         Assert.Equal(ContentStatus.Published, item.Status);

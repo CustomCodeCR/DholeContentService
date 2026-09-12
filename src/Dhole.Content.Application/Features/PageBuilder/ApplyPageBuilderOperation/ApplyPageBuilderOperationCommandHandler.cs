@@ -28,6 +28,8 @@ public sealed class ApplyPageBuilderOperationCommandHandler(
             return Result.Failure<PageBuilderDocumentDto>(ContentErrors.ContentNotFound);
         if (item.Type != ContentType.Page)
             return Result.Failure<PageBuilderDocumentDto>(ContentErrors.PageBuilderOnlyPages);
+        if (item.Status == ContentStatus.PendingReview)
+            return Result.Failure<PageBuilderDocumentDto>(ContentErrors.InvalidContentState);
 
         string normalized;
         try

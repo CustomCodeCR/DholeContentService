@@ -5,6 +5,7 @@ using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Cache;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Domain.ContentItems.Enums;
 using Dhole.Content.Domain.Seo;
 using Dhole.Content.Domain.Shared;
 
@@ -32,6 +33,7 @@ public sealed class UpdateSeoCommandHandler(
     {
         var item = await contents.GetByIdWithDetailsAsync(command.ContentId, cancellationToken);
         if (item is null || item.IsDeleted) return Result.Failure(ContentErrors.ContentNotFound);
+        if (item.Status == ContentStatus.PendingReview) return Result.Failure(ContentErrors.InvalidContentState);
 
         if (command.OpenGraphMediaId.HasValue)
         {
