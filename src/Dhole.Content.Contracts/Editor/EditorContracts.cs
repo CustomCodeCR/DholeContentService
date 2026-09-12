@@ -20,7 +20,13 @@ public sealed record EditorContentRequest(
     bool? IsFeatured,
     IReadOnlyCollection<Guid>? CategoryIds,
     EditorSeoRequest? Seo,
-    string? SiteKey
+    string? SiteKey,
+    Guid? ParentContentId,
+    Guid? TranslationGroupId,
+    string? TemplateKey,
+    DateTime? UnpublishAtUtc,
+    decimal? SitemapPriority,
+    string? SitemapChangeFrequency
 );
 
 public sealed record EditorDashboardDto(

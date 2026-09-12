@@ -37,6 +37,12 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
     public Guid? FeaturedMediaId { get; private set; }
     public Guid? AuthorUserId { get; private set; }
     public string Locale { get; private set; } = "es-CR";
+    public Guid? ParentContentId { get; private set; }
+    public Guid? TranslationGroupId { get; private set; }
+    public string? TemplateKey { get; private set; }
+    public DateTime? UnpublishAtUtc { get; private set; }
+    public decimal? SitemapPriority { get; private set; }
+    public string? SitemapChangeFrequency { get; private set; }
     public int SortOrder { get; private set; }
     public bool IsFeatured { get; private set; }
     public string? SeoTitle { get; private set; }
@@ -67,6 +73,35 @@ public sealed class ContentItem : SoftDeletableAggregateRoot<Guid>
         BlocksJson = string.IsNullOrWhiteSpace(blocksJson) ? "[]" : blocksJson; RenderedHtml = Normalize(renderedHtml);
         FeaturedMediaId = featuredMediaId; SortOrder = sortOrder; IsFeatured = isFeatured;
         if (!string.IsNullOrWhiteSpace(locale)) Locale = locale.Trim();
+        MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
+        AddDomainEvent(new ContentItemUpdatedDomainEvent(Id, SiteKey, Type, Slug, Title, actorUserId));
+    }
+
+    public void ConfigureCmsMetadata(
+        Guid? parentContentId,
+        Guid? translationGroupId,
+        string? templateKey,
+        DateTime? unpublishAtUtc,
+        decimal? sitemapPriority,
+        string? sitemapChangeFrequency,
+        Guid? actorUserId)
+    {
+        EnsureNotArchived();
+        if (parentContentId == Id)
+        {
+            throw new ArgumentException("El contenido no puede ser su propio padre.", nameof(parentContentId));
+        }
+        if (sitemapPriority is < 0m or > 1m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sitemapPriority), "SitemapPriority debe estar entre 0 y 1.");
+        }
+
+        ParentContentId = parentContentId;
+        TranslationGroupId = translationGroupId;
+        TemplateKey = Normalize(templateKey);
+        UnpublishAtUtc = unpublishAtUtc;
+        SitemapPriority = sitemapPriority;
+        SitemapChangeFrequency = Normalize(sitemapChangeFrequency)?.ToLowerInvariant();
         MarkAsUpdated(DateTime.UtcNow, actorUserId?.ToString());
         AddDomainEvent(new ContentItemUpdatedDomainEvent(Id, SiteKey, Type, Slug, Title, actorUserId));
     }

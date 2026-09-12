@@ -111,6 +111,12 @@ public static class ContentItemEndpoints
                             seo?.OpenGraphMediaId,
                             seo?.StructuredDataJson,
                             request.SiteKey,
+                            request.ParentContentId,
+                            request.TranslationGroupId,
+                            request.TemplateKey,
+                            request.UnpublishAtUtc,
+                            request.SitemapPriority,
+                            request.SitemapChangeFrequency,
                             context.GetCurrentUserId()
                         ),
                         cancellationToken
@@ -152,6 +158,12 @@ public static class ContentItemEndpoints
                                 seo?.Robots,
                                 seo?.OpenGraphMediaId,
                                 seo?.StructuredDataJson,
+                                request.ParentContentId,
+                                request.TranslationGroupId,
+                                request.TemplateKey,
+                                request.UnpublishAtUtc,
+                                request.SitemapPriority,
+                                request.SitemapChangeFrequency,
                                 context.GetCurrentUserId()
                             ),
                             cancellationToken

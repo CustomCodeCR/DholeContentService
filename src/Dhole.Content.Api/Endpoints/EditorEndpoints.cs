@@ -212,6 +212,12 @@ public static class EditorEndpoints
                             seo?.OpenGraphMediaId,
                             null,
                             string.IsNullOrWhiteSpace(request.SiteKey) ? "main" : request.SiteKey,
+                            request.ParentContentId,
+                            request.TranslationGroupId,
+                            request.TemplateKey,
+                            request.UnpublishAtUtc,
+                            request.SitemapPriority,
+                            request.SitemapChangeFrequency,
                             context.GetCurrentUserId()
                         ),
                         cancellationToken
@@ -253,6 +259,12 @@ public static class EditorEndpoints
                             "index,follow",
                             seo?.OpenGraphMediaId,
                             null,
+                            request.ParentContentId,
+                            request.TranslationGroupId,
+                            request.TemplateKey,
+                            request.UnpublishAtUtc,
+                            request.SitemapPriority,
+                            request.SitemapChangeFrequency,
                             context.GetCurrentUserId()
                         ),
                         cancellationToken
