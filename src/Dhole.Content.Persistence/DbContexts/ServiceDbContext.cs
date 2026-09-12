@@ -7,6 +7,7 @@ using CustomCodeFramework.Postgres.EntityFramework.DbContexts;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Media.Entities;
 using Dhole.Content.Domain.Navigation.Entities;
+using Dhole.Content.Domain.Placements.Entities;
 using Dhole.Content.Domain.Routes.Entities;
 using Dhole.Content.Domain.Settings.Entities;
 using Dhole.Content.Domain.Sites.Entities;
@@ -32,6 +33,8 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<ContentRoute> ContentRoutes => Set<ContentRoute>();
+    public DbSet<Placement> Placements => Set<Placement>();
+    public DbSet<PlacementItem> PlacementItems => Set<PlacementItem>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
