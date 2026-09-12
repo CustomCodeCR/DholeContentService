@@ -185,7 +185,7 @@ public static class ContentItemEndpoints
                         context
                     )
             )
-            .RequireScope(ContentScopeNames.Edit);
+            .RequireAnyScope(ContentScopeNames.ReviewsSubmit, ContentScopeNames.Edit);
 
         group.MapPost(
                 "/{id:guid}/publish",

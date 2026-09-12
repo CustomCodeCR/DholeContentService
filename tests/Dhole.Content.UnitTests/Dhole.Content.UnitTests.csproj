@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dhole.Content.Domain\Dhole.Content.Domain.csproj" />
     <ProjectReference Include="..\..\src\Dhole.Content.Persistence\Dhole.Content.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Dhole.Content.Api\Dhole.Content.Api.csproj" />
   </ItemGroup>
 </Project>
