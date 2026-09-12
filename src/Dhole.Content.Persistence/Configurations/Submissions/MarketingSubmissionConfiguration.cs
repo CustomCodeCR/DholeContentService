@@ -1,4 +1,5 @@
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
+using Dhole.Content.Domain.Campaigns.Entities;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Forms.Entities;
 using Dhole.Content.Domain.Submissions.Entities;
@@ -30,5 +31,6 @@ internal sealed class MarketingSubmissionConfiguration : EntityTypeConfiguration
         builder.HasIndex(x => x.CampaignId).HasFilter("campaign_id IS NOT NULL AND is_deleted = false");
         builder.HasOne<MarketingForm>().WithMany().HasForeignKey(x => x.FormId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ContentItem>().WithMany().HasForeignKey(x => x.ContentId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<MarketingCampaign>().WithMany().HasForeignKey(x => x.CampaignId).OnDelete(DeleteBehavior.SetNull);
     }
 }

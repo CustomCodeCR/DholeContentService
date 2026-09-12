@@ -97,6 +97,7 @@ app.MapMarketingSubmissionEndpoints();
 app.MapMarketingLeadEndpoints();
 app.MapMarketingConsentEndpoints();
 app.MapMeetingEndpoints();
+app.MapMarketingCampaignEndpoints();
 app.MapSeoEndpoints();
 app.MapRedirectEndpoints();
 app.MapContentReviewEndpoints();
