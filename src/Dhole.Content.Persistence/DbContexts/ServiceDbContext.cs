@@ -4,6 +4,7 @@ using CustomCodeFramework.Messaging.Inbox;
 using CustomCodeFramework.Messaging.Outbox;
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
 using CustomCodeFramework.Postgres.EntityFramework.DbContexts;
+using Dhole.Content.Domain.Campaigns.Entities;
 using Dhole.Content.Domain.Collections.Entities;
 using Dhole.Content.Domain.Consents.Entities;
 using Dhole.Content.Domain.ContentItems.Entities;
@@ -52,6 +53,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
     public DbSet<MeetingType> MeetingTypes => Set<MeetingType>();
     public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();
+    public DbSet<MarketingCampaign> MarketingCampaigns => Set<MarketingCampaign>();
     public DbSet<ContentRedirect> Redirects => Set<ContentRedirect>();
     public DbSet<ContentReview> ContentReviews => Set<ContentReview>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

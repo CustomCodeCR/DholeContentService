@@ -35,6 +35,7 @@ public sealed class SubmitMarketingFormCommandHandler(
     IMarketingSubmissionRepository submissions,
     IMarketingConsentRepository consents,
     IContentItemRepository contentItems,
+    IMarketingCampaignRepository campaigns,
     IUnitOfWork unitOfWork) : ICommandHandler<SubmitMarketingFormCommand, Result<MarketingSubmissionReceiptDto>>
 {
     public async Task<Result<MarketingSubmissionReceiptDto>> HandleAsync(
@@ -53,6 +54,13 @@ public sealed class SubmitMarketingFormCommandHandler(
             if (content is null || content.IsDeleted)
                 return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.ContentNotFound);
             if (!string.Equals(content.SiteKey, form.SiteKey, StringComparison.Ordinal))
+                return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingSubmissionData);
+        }
+
+        if (command.CampaignId.HasValue)
+        {
+            var campaign = await campaigns.GetByIdAsync(command.CampaignId.Value, cancellationToken);
+            if (campaign is null || campaign.IsDeleted || !string.Equals(campaign.SiteKey, form.SiteKey, StringComparison.Ordinal))
                 return Result.Failure<MarketingSubmissionReceiptDto>(ContentErrors.InvalidMarketingSubmissionData);
         }
 
