@@ -48,6 +48,9 @@ public static class ContentErrors
     public static readonly Error MarketingFormNotActive=new("Content.MarketingFormNotActive","El formulario no está activo para recibir envíos.");
     public static readonly Error MarketingSubmissionNotFound=new("Content.MarketingSubmissionNotFound","No se encontró el submission solicitado.");
     public static readonly Error InvalidMarketingSubmissionData=new("Content.InvalidMarketingSubmissionData","Los datos enviados no cumplen la definición del formulario.");
+    public static readonly Error MarketingLeadNotFound=new("Content.MarketingLeadNotFound","No se encontró el lead solicitado.");
+    public static readonly Error MarketingLeadEmailAlreadyExists=new("Content.MarketingLeadEmailAlreadyExists","Ya existe un lead con el mismo email para este sitio.");
+    public static readonly Error InvalidMarketingLeadData=new("Content.InvalidMarketingLeadData","Los datos del lead no son válidos.");
     public static readonly Error InvalidSeoData=new("Content.InvalidSeoData","Los datos SEO no son válidos.");
     public static readonly Error RedirectNotFound=new("Content.RedirectNotFound","No se encontró el redirect solicitado.");
     public static readonly Error RedirectSourceAlreadyExists=new("Content.RedirectSourceAlreadyExists","Ya existe un redirect para la misma ruta de origen en este sitio.");

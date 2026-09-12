@@ -94,6 +94,7 @@ app.MapPlacementEndpoints();
 app.MapCollectionEndpoints();
 app.MapMarketingFormEndpoints();
 app.MapMarketingSubmissionEndpoints();
+app.MapMarketingLeadEndpoints();
 app.MapSeoEndpoints();
 app.MapRedirectEndpoints();
 app.MapContentReviewEndpoints();

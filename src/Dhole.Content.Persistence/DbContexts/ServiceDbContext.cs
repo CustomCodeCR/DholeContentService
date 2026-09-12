@@ -7,6 +7,7 @@ using CustomCodeFramework.Postgres.EntityFramework.DbContexts;
 using Dhole.Content.Domain.Collections.Entities;
 using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.Forms.Entities;
+using Dhole.Content.Domain.Leads.Entities;
 using Dhole.Content.Domain.Media.Entities;
 using Dhole.Content.Domain.Navigation.Entities;
 using Dhole.Content.Domain.Placements.Entities;
@@ -45,6 +46,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
     public DbSet<MarketingForm> MarketingForms => Set<MarketingForm>();
     public DbSet<MarketingFormField> MarketingFormFields => Set<MarketingFormField>();
     public DbSet<MarketingSubmission> MarketingSubmissions => Set<MarketingSubmission>();
+    public DbSet<MarketingLead> MarketingLeads => Set<MarketingLead>();
     public DbSet<ContentRedirect> Redirects => Set<ContentRedirect>();
     public DbSet<ContentReview> ContentReviews => Set<ContentReview>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

@@ -33,6 +33,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<IMarketingFormRepository, MarketingFormRepository>();
         services.AddScoped<IMarketingFormFieldRepository, MarketingFormFieldRepository>();
         services.AddScoped<IMarketingSubmissionRepository, MarketingSubmissionRepository>();
+        services.AddScoped<IMarketingLeadRepository, MarketingLeadRepository>();
         services.AddScoped<ISeoRepository, SeoRepository>();
         services.AddScoped<IRedirectRepository, RedirectRepository>();
         services.AddScoped<IContentReviewRepository, ContentReviewRepository>();
