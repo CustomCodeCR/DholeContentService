@@ -102,6 +102,7 @@ public sealed class UpdateMarketingFormFieldCommandHandler(
             return Result.Failure(ContentErrors.MarketingFormFieldKeyAlreadyExists);
 
         var before = CreateMarketingFormFieldCommandHandler.Snapshot(field);
+        var previousSortOrder = field.SortOrder;
         try
         {
             field.Update(command.FieldKey, command.Label, command.FieldType, command.Placeholder,
@@ -113,7 +114,8 @@ public sealed class UpdateMarketingFormFieldCommandHandler(
         }
 
         form.TouchFieldChange(command.ActorUserId);
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingFormFieldUpdated, ContentAuditActions.Updated,
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingFormFieldUpdated,
+            ContentAuditActions.ResolveMutation(reordered: previousSortOrder != field.SortOrder),
             ContentAuditEntityTypes.MarketingFormField, field.Id, command.ActorUserId, Before: before,
             After: CreateMarketingFormFieldCommandHandler.Snapshot(field), Payload: new { form.Id, form.Version }), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

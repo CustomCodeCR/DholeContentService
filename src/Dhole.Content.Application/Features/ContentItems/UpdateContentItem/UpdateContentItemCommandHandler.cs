@@ -70,6 +70,7 @@ public sealed class UpdateContentItemCommandHandler(
 
         var before = ContentAuditSnapshots.From(item);
         var oldSlug = item.Slug;
+        var oldSortOrder = item.SortOrder;
         item.CreateRevision(command.UpdatedBy, "before-update");
 
         var slug = string.IsNullOrWhiteSpace(command.Slug)
@@ -126,7 +127,7 @@ public sealed class UpdateContentItemCommandHandler(
         await audit.PublishAsync(
             new ContentAuditEvent(
                 ContentAuditEventTypes.ContentUpdated,
-                ContentAuditActions.Updated,
+                ContentAuditActions.ResolveMutation(reordered: oldSortOrder != item.SortOrder),
                 ContentAuditEntityTypes.ContentItem,
                 item.Id,
                 command.UpdatedBy,

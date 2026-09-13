@@ -34,7 +34,8 @@ public sealed class ApproveContentReviewCommandHandler(
         if (content is null || content.IsDeleted) return Result.Failure(ContentErrors.ContentNotFound);
         if (content.Status != ContentStatus.PendingReview) return Result.Failure(ContentErrors.InvalidContentState);
 
-        var before = ContentAuditSnapshots.From(content);
+        var contentBefore = ContentAuditSnapshots.From(content);
+        var reviewBefore = ReviewSnapshot(review);
         try
         {
             review.Approve(command.ActorUserId, command.Comment, clock.UtcNow);
@@ -51,10 +52,11 @@ public sealed class ApproveContentReviewCommandHandler(
 
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentReviewApproved,
-            ContentAuditActions.StatusChanged,
+            ContentAuditActions.Approved,
             ContentAuditEntityTypes.ContentReview,
             review.Id,
             command.ActorUserId,
+            Before: reviewBefore,
             After: ReviewSnapshot(review)), cancellationToken);
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentPublished,
@@ -62,7 +64,7 @@ public sealed class ApproveContentReviewCommandHandler(
             ContentAuditEntityTypes.ContentItem,
             content.Id,
             command.ActorUserId,
-            Before: before,
+            Before: contentBefore,
             After: ContentAuditSnapshots.From(content)), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -102,7 +104,8 @@ public sealed class RejectContentReviewCommandHandler(
         if (content is null || content.IsDeleted) return Result.Failure(ContentErrors.ContentNotFound);
         if (content.Status != ContentStatus.PendingReview) return Result.Failure(ContentErrors.InvalidContentState);
 
-        var before = ContentAuditSnapshots.From(content);
+        var contentBefore = ContentAuditSnapshots.From(content);
+        var reviewBefore = ApproveContentReviewCommandHandler.ReviewSnapshot(review);
         try
         {
             review.Reject(command.ActorUserId, command.Comment, clock.UtcNow);
@@ -119,10 +122,11 @@ public sealed class RejectContentReviewCommandHandler(
 
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentReviewRejected,
-            ContentAuditActions.StatusChanged,
+            ContentAuditActions.Rejected,
             ContentAuditEntityTypes.ContentReview,
             review.Id,
             command.ActorUserId,
+            Before: reviewBefore,
             After: ApproveContentReviewCommandHandler.ReviewSnapshot(review)), cancellationToken);
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentReviewRejected,
@@ -130,7 +134,7 @@ public sealed class RejectContentReviewCommandHandler(
             ContentAuditEntityTypes.ContentItem,
             content.Id,
             command.ActorUserId,
-            Before: before,
+            Before: contentBefore,
             After: ContentAuditSnapshots.From(content)), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

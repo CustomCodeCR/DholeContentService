@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CustomCodeFramework.Messaging.Outbox;
+using Dhole.Content.Application.Auditing;
 using Dhole.Content.Persistence.Auditing;
 using Dhole.Content.Persistence.DbContexts;
 
@@ -7,7 +8,6 @@ namespace Dhole.Content.Api.Middleware;
 
 public sealed class AuditEndpointMiddleware(RequestDelegate next, ILogger<AuditEndpointMiddleware> logger)
 {
-    private const string SourceService = "DholeContentService";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly string[] IgnoredPathPrefixes = ["/swagger", "/health", "/metrics", "/favicon.ico"];
     private static readonly string[] EntityIdKeys = ["id", "contentId", "revisionId", "mediaId", "taxonomyId", "menuId", "settingId", "fileId"];
@@ -44,7 +44,7 @@ public sealed class AuditEndpointMiddleware(RequestDelegate next, ILogger<AuditE
             {
                 EventId = eventId,
                 CorrelationId = correlationId,
-                SourceService,
+                SourceService = ContentAuditIntegration.SourceService,
                 EntityType = ResolveEntityType(context),
                 EntityId = ResolveEntityId(context),
                 Action = ResolveAction(context),
@@ -66,9 +66,9 @@ public sealed class AuditEndpointMiddleware(RequestDelegate next, ILogger<AuditE
             dbContext.OutboxMessages.Add(new OutboxMessage
             {
                 EventId = Guid.NewGuid(),
-                EventType = "Dhole.AuditLogs.Contracts.AuditEvents.RegisterAuditEventRequest",
-                EventName = "audit.event.registered",
-                SourceService = SourceService,
+                EventType = ContentAuditIntegration.RegisterEventContract,
+                EventName = ContentAuditIntegration.RegisteredMessage,
+                SourceService = ContentAuditIntegration.SourceService,
                 PayloadJson = JsonSerializer.Serialize(payload, JsonOptions),
                 HeadersJson = null,
                 CorrelationId = correlationId.ToString(),
@@ -101,9 +101,9 @@ public sealed class AuditEndpointMiddleware(RequestDelegate next, ILogger<AuditE
         return context.Request.Method.ToUpperInvariant() switch
         {
             "GET" or "HEAD" => "viewed",
-            "POST" => "created",
-            "PUT" or "PATCH" => "updated",
-            "DELETE" => "deleted",
+            "POST" => ContentAuditActions.Created,
+            "PUT" or "PATCH" => ContentAuditActions.Updated,
+            "DELETE" => ContentAuditActions.Deleted,
             _ => "executed"
         };
     }

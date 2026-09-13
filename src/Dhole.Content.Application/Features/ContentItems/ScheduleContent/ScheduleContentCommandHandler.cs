@@ -6,6 +6,7 @@ using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Cache;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Auditing;
+using Dhole.Content.Application.Reviews;
 using Dhole.Content.Domain.ContentItems.Enums;
 using Dhole.Content.Domain.Reviews.Enums;
 using Dhole.Content.Domain.Shared;
@@ -33,7 +34,8 @@ public sealed class ScheduleContentCommandHandler(
         if (review is null || review.IsDeleted || review.Status != ContentReviewStatus.Pending)
             return Result.Failure(ContentErrors.ContentReviewNotFound);
 
-        var before = ContentAuditSnapshots.From(content);
+        var contentBefore = ContentAuditSnapshots.From(content);
+        var reviewBefore = ApproveContentReviewCommandHandler.ReviewSnapshot(review);
         try
         {
             content.Schedule(c.ScheduledAtUtc, c.UnpublishAtUtc, clock.UtcNow, c.ActorUserId);
@@ -50,23 +52,13 @@ public sealed class ScheduleContentCommandHandler(
 
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentReviewApproved,
-            ContentAuditActions.StatusChanged,
+            ContentAuditActions.Approved,
             ContentAuditEntityTypes.ContentReview,
             review.Id,
             c.ActorUserId,
-            After: new
-            {
-                review.Id,
-                review.ContentId,
-                review.RevisionId,
-                review.SubmittedByUserId,
-                review.ReviewerUserId,
-                Status = review.Status.ToString(),
-                review.Comment,
-                review.SubmittedAtUtc,
-                review.DecidedAtUtc,
-                ScheduledPublication = true
-            }), ct);
+            Before: reviewBefore,
+            After: ApproveContentReviewCommandHandler.ReviewSnapshot(review),
+            Metadata: new { ScheduledPublication = true }), ct);
 
         await audit.PublishAsync(new ContentAuditEvent(
             ContentAuditEventTypes.ContentScheduled,
@@ -74,7 +66,7 @@ public sealed class ScheduleContentCommandHandler(
             ContentAuditEntityTypes.ContentItem,
             content.Id,
             c.ActorUserId,
-            Before: before,
+            Before: contentBefore,
             After: ContentAuditSnapshots.From(content),
             Metadata: new { c.ScheduledAtUtc, c.UnpublishAtUtc }), ct);
 

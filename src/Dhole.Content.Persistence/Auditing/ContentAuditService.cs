@@ -1,15 +1,13 @@
 using System.Text.Json;
 using CustomCodeFramework.Messaging.Outbox;
 using Dhole.Content.Application.Abstractions.Auditing;
+using Dhole.Content.Application.Auditing;
 using Dhole.Content.Persistence.DbContexts;
 
 namespace Dhole.Content.Persistence.Auditing;
 
 public sealed class ContentAuditService(ServiceDbContext dbContext) : IContentAuditService
 {
-    private const string SourceService = "DholeContentService";
-    private const string AuditEventType = "Dhole.AuditLogs.Contracts.AuditEvents.RegisterAuditEventRequest";
-    private const string AuditEventName = "audit.event.registered";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public Task PublishAsync(ContentAuditEvent auditEvent, CancellationToken cancellationToken = default)
@@ -23,7 +21,7 @@ public sealed class ContentAuditService(ServiceDbContext dbContext) : IContentAu
         {
             EventId = eventId,
             CorrelationId = correlationId,
-            SourceService,
+            SourceService = ContentAuditIntegration.SourceService,
             auditEvent.EntityType,
             auditEvent.EntityId,
             auditEvent.Action,
@@ -45,9 +43,9 @@ public sealed class ContentAuditService(ServiceDbContext dbContext) : IContentAu
         dbContext.OutboxMessages.Add(new OutboxMessage
         {
             EventId = Guid.NewGuid(),
-            EventType = AuditEventType,
-            EventName = AuditEventName,
-            SourceService = SourceService,
+            EventType = ContentAuditIntegration.RegisterEventContract,
+            EventName = ContentAuditIntegration.RegisteredMessage,
+            SourceService = ContentAuditIntegration.SourceService,
             PayloadJson = JsonSerializer.Serialize(payload, JsonOptions),
             HeadersJson = null,
             CorrelationId = correlationId.ToString(),

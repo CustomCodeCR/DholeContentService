@@ -66,6 +66,7 @@ public sealed class UpdateCollectionCommandHandler(
             return Result.Failure(ContentErrors.CollectionCodeAlreadyExists);
 
         var before = CreateCollectionCommandHandler.Snapshot(collection);
+        var previousIsActive = collection.IsActive;
         try
         {
             collection.Update(command.SiteKey, command.Code, command.Name, command.SettingsJson, command.IsActive, command.ActorUserId);
@@ -75,7 +76,8 @@ public sealed class UpdateCollectionCommandHandler(
             return Result.Failure(ContentErrors.InvalidCollectionData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.CollectionUpdated, ContentAuditActions.Updated,
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.CollectionUpdated,
+            ContentAuditActions.ResolveMutation(statusChanged: previousIsActive != collection.IsActive),
             ContentAuditEntityTypes.Collection, collection.Id, command.ActorUserId, Before: before,
             After: CreateCollectionCommandHandler.Snapshot(collection)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

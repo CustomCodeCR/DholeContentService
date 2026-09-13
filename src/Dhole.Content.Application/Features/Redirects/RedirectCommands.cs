@@ -72,6 +72,7 @@ public sealed class UpdateRedirectCommandHandler(
             return Result.Failure(ContentErrors.RedirectSourceAlreadyExists);
 
         var before = RedirectAuditSnapshot.From(redirect);
+        var previousIsActive = redirect.IsActive;
         try
         {
             redirect.Update(command.SiteKey, command.SourcePath, command.TargetUrl, command.StatusCode,
@@ -82,7 +83,8 @@ public sealed class UpdateRedirectCommandHandler(
             return Result.Failure(ContentErrors.InvalidRedirectData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.RedirectUpdated, ContentAuditActions.Updated,
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.RedirectUpdated,
+            ContentAuditActions.ResolveMutation(statusChanged: previousIsActive != redirect.IsActive),
             ContentAuditEntityTypes.Redirect, redirect.Id, command.ActorUserId, Before: before,
             After: RedirectAuditSnapshot.From(redirect)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -67,6 +67,7 @@ public sealed class UpdatePlacementCommandHandler(
             return Result.Failure(ContentErrors.PlacementCodeAlreadyExists);
 
         var before = CreatePlacementCommandHandler.Snapshot(placement);
+        var previousIsActive = placement.IsActive;
         try
         {
             placement.Update(command.SiteKey, command.Code, command.Name, command.AllowedTypesJson,
@@ -77,7 +78,8 @@ public sealed class UpdatePlacementCommandHandler(
             return Result.Failure(ContentErrors.InvalidPlacementData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.PlacementUpdated, ContentAuditActions.Updated,
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.PlacementUpdated,
+            ContentAuditActions.ResolveMutation(statusChanged: previousIsActive != placement.IsActive),
             ContentAuditEntityTypes.Placement, placement.Id, command.ActorUserId, Before: before,
             After: CreatePlacementCommandHandler.Snapshot(placement)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

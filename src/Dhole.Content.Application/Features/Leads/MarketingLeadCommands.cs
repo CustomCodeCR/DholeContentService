@@ -122,6 +122,7 @@ public sealed class UpdateMarketingLeadCommandHandler(
             return Result.Failure(ContentErrors.MarketingLeadEmailAlreadyExists);
 
         var before = CreateMarketingLeadCommandHandler.Snapshot(lead);
+        var previousStatus = lead.Status;
         try
         {
             lead.Update(command.SiteKey, command.FirstName, command.LastName, command.Email, command.Phone,
@@ -134,7 +135,8 @@ public sealed class UpdateMarketingLeadCommandHandler(
         }
 
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingLeadUpdated,
-            ContentAuditActions.Updated, ContentAuditEntityTypes.MarketingLead, lead.Id, command.ActorUserId,
+            ContentAuditActions.ResolveMutation(statusChanged: !string.Equals(previousStatus, lead.Status, StringComparison.Ordinal)),
+            ContentAuditEntityTypes.MarketingLead, lead.Id, command.ActorUserId,
             Before: before, After: CreateMarketingLeadCommandHandler.Snapshot(lead)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();

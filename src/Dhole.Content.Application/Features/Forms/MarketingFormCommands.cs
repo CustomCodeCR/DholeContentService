@@ -96,6 +96,7 @@ public sealed class UpdateMarketingFormCommandHandler(
             return Result.Failure(ContentErrors.MarketingFormKeyAlreadyExists);
 
         var before = CreateMarketingFormCommandHandler.Snapshot(form);
+        var previousStatus = form.Status;
         try
         {
             form.Update(command.SiteKey, command.FormKey, command.Name, command.Purpose, command.Status,
@@ -106,7 +107,8 @@ public sealed class UpdateMarketingFormCommandHandler(
             return Result.Failure(ContentErrors.InvalidMarketingFormData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingFormUpdated, ContentAuditActions.Updated,
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingFormUpdated,
+            ContentAuditActions.ResolveMutation(statusChanged: !string.Equals(previousStatus, form.Status, StringComparison.Ordinal)),
             ContentAuditEntityTypes.MarketingForm, form.Id, command.ActorUserId, Before: before,
             After: CreateMarketingFormCommandHandler.Snapshot(form)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

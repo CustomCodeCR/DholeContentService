@@ -69,6 +69,7 @@ public sealed class PublishContentCommandHandler(
                     After: ApproveContentReviewCommandHandler.ReviewSnapshot(review)), ct);
             }
 
+            var reviewBefore = ApproveContentReviewCommandHandler.ReviewSnapshot(review);
             try
             {
                 review.Approve(command.ActorUserId, null, clock.UtcNow);
@@ -80,10 +81,11 @@ public sealed class PublishContentCommandHandler(
 
             await audit.PublishAsync(new ContentAuditEvent(
                 ContentAuditEventTypes.ContentReviewApproved,
-                ContentAuditActions.StatusChanged,
+                ContentAuditActions.Approved,
                 ContentAuditEntityTypes.ContentReview,
                 review.Id,
                 command.ActorUserId,
+                Before: reviewBefore,
                 After: ApproveContentReviewCommandHandler.ReviewSnapshot(review)), ct);
         }
 
