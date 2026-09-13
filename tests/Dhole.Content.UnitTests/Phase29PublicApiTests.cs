@@ -3,6 +3,7 @@ using Dhole.Content.Domain.ContentItems.Entities;
 using Dhole.Content.Domain.ContentItems.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Xunit;
 
@@ -15,6 +16,7 @@ public sealed class Phase29PublicApiTests
     {
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
+        IEndpointRouteBuilder routes = app;
 
         app.MapGet("/api/content/items", () => Results.Ok()).RequireAuthorization("cms.items.view");
         app.MapPost("/api/content/forms/{id:guid}/submissions", (Guid id) => Results.Ok(id)).AllowAnonymous();
@@ -22,7 +24,7 @@ public sealed class Phase29PublicApiTests
 
         app.MapCmsAdminAliases();
 
-        var endpoints = app.DataSources.SelectMany(source => source.Endpoints).OfType<RouteEndpoint>().ToArray();
+        var endpoints = routes.DataSources.SelectMany(source => source.Endpoints).OfType<RouteEndpoint>().ToArray();
         var cmsItems = Assert.Single(endpoints.Where(endpoint => endpoint.RoutePattern.RawText == "/api/cms/items"));
         Assert.NotEmpty(cmsItems.Metadata.GetOrderedMetadata<IAuthorizeData>());
         Assert.Null(cmsItems.Metadata.GetMetadata<IAllowAnonymous>());
