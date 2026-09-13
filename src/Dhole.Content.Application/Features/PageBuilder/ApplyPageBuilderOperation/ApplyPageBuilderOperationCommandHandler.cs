@@ -66,10 +66,14 @@ public sealed class ApplyPageBuilderOperationCommandHandler(
             item.Locale,
             command.ActorUserId);
 
+        var action = string.Equals(command.Operation, "move", StringComparison.OrdinalIgnoreCase)
+            ? ContentAuditActions.Reordered
+            : ContentAuditActions.Updated;
+
         await audit.PublishAsync(
             new ContentAuditEvent(
                 ContentAuditEventTypes.ContentUpdated,
-                ContentAuditActions.Updated,
+                action,
                 ContentAuditEntityTypes.ContentItem,
                 item.Id,
                 command.ActorUserId,
