@@ -47,6 +47,7 @@ public sealed class UpdateContentMediaCommandHandler(
             link.FocalY,
             link.SettingsJson
         };
+        var previousSortOrder = link.SortOrder;
 
         try
         {
@@ -68,7 +69,7 @@ public sealed class UpdateContentMediaCommandHandler(
         await audit.PublishAsync(
             new ContentAuditEvent(
                 ContentAuditEventTypes.ContentMediaUpdated,
-                ContentAuditActions.Updated,
+                ContentAuditActions.ResolveMutation(reordered: previousSortOrder != link.SortOrder),
                 ContentAuditEntityTypes.ContentMedia,
                 link.Id,
                 command.ActorUserId,
