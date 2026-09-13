@@ -89,6 +89,7 @@ public sealed class UpdateMarketingCampaignCommandHandler(ISiteRepository sites,
             command.LandingContentId, contentItems, cancellationToken);
         if (landingValidation.IsFailure) return landingValidation;
         var before = CreateMarketingCampaignCommandHandler.Snapshot(campaign);
+        var previousStatus = campaign.Status;
         try
         {
             campaign.Update(command.SiteKey, command.Name, command.Slug, command.Status, command.StartsAtUtc,
@@ -98,7 +99,8 @@ public sealed class UpdateMarketingCampaignCommandHandler(ISiteRepository sites,
         catch (ArgumentException) { return Result.Failure(CampaignErrors.InvalidData); }
 
         await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.MarketingCampaignUpdated,
-            ContentAuditActions.Updated, ContentAuditEntityTypes.MarketingCampaign, campaign.Id,
+            ContentAuditActions.ResolveMutation(statusChanged: !string.Equals(previousStatus, campaign.Status, StringComparison.Ordinal)),
+            ContentAuditEntityTypes.MarketingCampaign, campaign.Id,
             command.ActorUserId, Before: before, After: CreateMarketingCampaignCommandHandler.Snapshot(campaign)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
