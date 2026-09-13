@@ -40,7 +40,11 @@ public static class ContentAuditEntityTypes
     public const string CollectionItem = "CollectionItem";
     public const string MarketingForm = "MarketingForm";
     public const string MarketingFormField = "MarketingFormField";
+    public const string MarketingSubmission = "MarketingSubmission";
+    public const string MarketingConsent = "MarketingConsent";
     public const string MarketingLead = "MarketingLead";
+    public const string MeetingType = "MeetingType";
+    public const string MeetingRequest = "MeetingRequest";
     public const string MarketingCampaign = "MarketingCampaign";
     public const string Redirect = "Redirect";
 }
@@ -90,9 +94,16 @@ public static class ContentAuditEventTypes
     public const string MarketingFormFieldCreated = "content.marketing-form-field.created";
     public const string MarketingFormFieldUpdated = "content.marketing-form-field.updated";
     public const string MarketingFormFieldDeleted = "content.marketing-form-field.deleted";
+    public const string MarketingSubmissionCreated = "content.marketing-submission.created";
+    public const string MarketingConsentCreated = "content.marketing-consent.created";
     public const string MarketingLeadCreated = "content.marketing-lead.created";
     public const string MarketingLeadUpdated = "content.marketing-lead.updated";
     public const string MarketingLeadDeleted = "content.marketing-lead.deleted";
+    public const string MeetingTypeCreated = "content.meeting-type.created";
+    public const string MeetingTypeUpdated = "content.meeting-type.updated";
+    public const string MeetingTypeDeleted = "content.meeting-type.deleted";
+    public const string MeetingRequestCreated = "content.meeting-request.created";
+    public const string MeetingRequestStatusChanged = "content.meeting-request.status-changed";
     public const string MarketingCampaignCreated = "content.marketing-campaign.created";
     public const string MarketingCampaignUpdated = "content.marketing-campaign.updated";
     public const string MarketingCampaignDeleted = "content.marketing-campaign.deleted";
