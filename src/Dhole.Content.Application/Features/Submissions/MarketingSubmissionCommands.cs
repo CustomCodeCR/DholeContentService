@@ -2,7 +2,9 @@ using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
 using Dhole.Content.Application.Abstractions.Auditing;
+using Dhole.Content.Application.Abstractions.Messaging;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Application.Analytics;
 using Dhole.Content.Application.Auditing;
 using Dhole.Content.Contracts.Consents;
 using Dhole.Content.Contracts.Submissions;
@@ -38,6 +40,7 @@ public sealed class SubmitMarketingFormCommandHandler(
     IMarketingConsentRepository consents,
     IContentItemRepository contentItems,
     IMarketingCampaignRepository campaigns,
+    IIntegrationEventOutboxWriter outbox,
     IContentAuditService audit,
     IUnitOfWork unitOfWork) : ICommandHandler<SubmitMarketingFormCommand, Result<MarketingSubmissionReceiptDto>>
 {
@@ -148,6 +151,16 @@ public sealed class SubmitMarketingFormCommandHandler(
                 consent.Id,
                 After: ConsentSnapshot(consent)), cancellationToken);
         }
+
+        await outbox.WriteAsync(
+            ContentAnalyticsIntegration.FormSubmittedEventName,
+            ContentAnalyticsIntegration.FormSubmittedEventType,
+            new FormSubmittedAnalyticsEvent(
+                Guid.NewGuid(), form.SiteKey, submission.Id, form.Id, submission.ContentId, submission.CampaignId,
+                submission.SourceUrl, submission.ReferrerUrl, submission.UtmSource, submission.UtmMedium,
+                submission.UtmCampaign, submission.UtmContent, submission.UtmTerm, submission.SubmittedAtUtc),
+            command.CorrelationId.ToString(),
+            cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
