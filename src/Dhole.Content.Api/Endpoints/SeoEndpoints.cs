@@ -22,9 +22,14 @@ public static class SeoEndpoints
                 request.StructuredDataJson, context.GetCurrentUserId()), ct), context))
             .RequireScope(ContentScopeNames.SeoEdit);
 
-        var publicGroup = app.MapGroup("/api/content/public").WithTags("Public SEO").AllowAnonymous();
-        publicGroup.MapGet("/sitemap.xml", SitemapAsync);
-        publicGroup.MapGet("/robots.txt", RobotsAsync);
+        var canonicalPublic = app.MapGroup("/api/public").WithTags("Public SEO").AllowAnonymous();
+        canonicalPublic.MapGet("/sitemap.xml", SitemapAsync);
+        canonicalPublic.MapGet("/robots.txt", RobotsAsync);
+
+        var legacyPublic = app.MapGroup("/api/content/public").WithTags("Public SEO (Legacy)").AllowAnonymous();
+        legacyPublic.MapGet("/sitemap.xml", SitemapAsync);
+        legacyPublic.MapGet("/robots.txt", RobotsAsync);
+
         app.MapGet("/sitemap.xml", SitemapAsync).AllowAnonymous();
         app.MapGet("/robots.txt", RobotsAsync).AllowAnonymous();
 
