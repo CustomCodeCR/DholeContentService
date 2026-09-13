@@ -65,12 +65,26 @@ public static class CmsAdminAliasExtensions
             builder.Metadata.Add(metadata);
         }
 
-        return builder.Build();
+        return (RouteEndpoint)builder.Build();
     }
 
     private sealed class StaticEndpointDataSource(IReadOnlyList<Endpoint> endpoints) : EndpointDataSource
     {
         public override IReadOnlyList<Endpoint> Endpoints { get; } = endpoints;
-        public override IChangeToken GetChangeToken() => NullChangeToken.Singleton;
+        public override IChangeToken GetChangeToken() => NeverChangeToken.Instance;
+    }
+
+    private sealed class NeverChangeToken : IChangeToken
+    {
+        public static NeverChangeToken Instance { get; } = new();
+        public bool HasChanged => false;
+        public bool ActiveChangeCallbacks => false;
+        public IDisposable RegisterChangeCallback(Action<object?> callback, object? state) => NoopDisposable.Instance;
+    }
+
+    private sealed class NoopDisposable : IDisposable
+    {
+        public static NoopDisposable Instance { get; } = new();
+        public void Dispose() { }
     }
 }
