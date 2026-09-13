@@ -22,8 +22,6 @@ public sealed class ContentPreviewTokenService
             throw new ArgumentException("A preview signing secret is required.", nameof(signingSecret));
         }
 
-        // Derive a purpose-specific key so preview tokens cannot be confused with authentication JWTs
-        // even when the deployment falls back to Auth:Jwt:SecretKey.
         _signingKey = SHA256.HashData(
             Encoding.UTF8.GetBytes($"Dhole.Content.Preview.v1|{signingSecret}"));
         _timeProvider = timeProvider ?? TimeProvider.System;
@@ -83,6 +81,17 @@ public sealed class ContentPreviewTokenService
         try
         {
             var providedSignature = Base64UrlDecode(signaturePart);
+            if (!string.Equals(Base64UrlEncode(providedSignature), signaturePart, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var payloadBytes = Base64UrlDecode(payloadPart);
+            if (!string.Equals(Base64UrlEncode(payloadBytes), payloadPart, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             var expectedSignature = Sign(payloadPart);
             if (providedSignature.Length != expectedSignature.Length ||
                 !CryptographicOperations.FixedTimeEquals(providedSignature, expectedSignature))
@@ -90,7 +99,7 @@ public sealed class ContentPreviewTokenService
                 return false;
             }
 
-            var payload = JsonSerializer.Deserialize<PreviewTokenPayload>(Base64UrlDecode(payloadPart));
+            var payload = JsonSerializer.Deserialize<PreviewTokenPayload>(payloadBytes);
             if (payload is null || payload.Version != TokenVersion || payload.ContentId == Guid.Empty)
             {
                 return false;
