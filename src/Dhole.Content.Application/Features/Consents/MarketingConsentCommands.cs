@@ -1,7 +1,9 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
+using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Application.Auditing;
 using Dhole.Content.Domain.Consents.Entities;
 using Dhole.Content.Domain.Shared;
 
@@ -22,6 +24,7 @@ public sealed class CaptureMarketingConsentCommandHandler(
     IMarketingLeadRepository leads,
     IMarketingSubmissionRepository submissions,
     IMarketingFormRepository forms,
+    IContentAuditService audit,
     IUnitOfWork unitOfWork) : ICommandHandler<CaptureMarketingConsentCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> HandleAsync(
@@ -65,6 +68,23 @@ public sealed class CaptureMarketingConsentCommandHandler(
         }
 
         await consents.AddAsync(consent, cancellationToken);
+        await audit.PublishAsync(new ContentAuditEvent(
+            ContentAuditEventTypes.MarketingConsentCreated,
+            ContentAuditActions.Created,
+            ContentAuditEntityTypes.MarketingConsent,
+            consent.Id,
+            command.ActorUserId,
+            After: new
+            {
+                consent.Id,
+                consent.LeadId,
+                consent.SubmissionId,
+                consent.Purpose,
+                consent.Granted,
+                consent.PolicyVersion,
+                consent.Source,
+                consent.CapturedAtUtc
+            }), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success(consent.Id);
     }
