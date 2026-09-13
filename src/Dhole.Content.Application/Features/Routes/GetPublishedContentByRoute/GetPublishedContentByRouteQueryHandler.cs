@@ -1,5 +1,6 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Queries;
+using Dhole.Content.Application.Abstractions.Cache;
 using Dhole.Content.Application.Abstractions.Repositories;
 using Dhole.Content.Application.Mappings;
 using Dhole.Content.Contracts.ContentItems;
@@ -10,16 +11,17 @@ namespace Dhole.Content.Application.Routes.GetPublishedContentByRoute;
 
 public sealed class GetPublishedContentByRouteQueryHandler(
     IContentRouteRepository routes,
-    IContentItemRepository contents
+    IContentItemRepository contents,
+    IContentCacheService cache
 ) : IQueryHandler<GetPublishedContentByRouteQuery, Result<ContentItemDto>>
 {
-    public async Task<Result<ContentItemDto>> HandleAsync(
-        GetPublishedContentByRouteQuery query,
-        CancellationToken ct = default)
+    public async Task<Result<ContentItemDto>> HandleAsync(GetPublishedContentByRouteQuery query, CancellationToken ct = default)
     {
+        var cached = await cache.GetPublishedRouteAsync(query.SiteKey, query.Locale, query.Path, ct);
+        if (cached is not null) return Result.Success(cached);
+
         var route = await routes.GetByPathAsync(query.SiteKey, query.Locale, query.Path, true, ct);
-        if (route is null)
-            return Result.Failure<ContentItemDto>(ContentErrors.ContentRouteNotFound);
+        if (route is null) return Result.Failure<ContentItemDto>(ContentErrors.ContentRouteNotFound);
 
         var content = await contents.GetByIdWithDetailsAsync(route.ContentId, ct);
         if (content is null || content.IsDeleted || content.Status != ContentStatus.Published)
@@ -29,6 +31,8 @@ public sealed class GetPublishedContentByRouteQueryHandler(
             !string.Equals(content.Locale, route.Locale, StringComparison.OrdinalIgnoreCase))
             return Result.Failure<ContentItemDto>(ContentErrors.ContentRouteSiteMismatch);
 
-        return Result.Success(ContentMappings.ToDto(content));
+        var dto = ContentMappings.ToDto(content);
+        await cache.SetPublishedRouteAsync(query.SiteKey, query.Locale, query.Path, dto, cancellationToken: ct);
+        return Result.Success(dto);
     }
 }
