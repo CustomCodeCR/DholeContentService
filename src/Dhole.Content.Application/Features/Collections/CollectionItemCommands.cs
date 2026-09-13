@@ -63,6 +63,8 @@ public sealed class UpdateCollectionItemCommandHandler(
             return Result.Failure(ContentErrors.CollectionItemNotFound);
 
         var before = CreateCollectionItemCommandHandler.Snapshot(item);
+        var previousSortOrder = item.SortOrder;
+        var previousIsActive = item.IsActive;
         try
         {
             item.Update(command.DataJson, command.SortOrder, command.IsActive, command.ActorUserId);
@@ -72,7 +74,10 @@ public sealed class UpdateCollectionItemCommandHandler(
             return Result.Failure(ContentErrors.InvalidCollectionData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.CollectionItemUpdated, ContentAuditActions.Updated,
+        var action = ContentAuditActions.ResolveMutation(
+            statusChanged: previousIsActive != item.IsActive,
+            reordered: previousSortOrder != item.SortOrder);
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.CollectionItemUpdated, action,
             ContentAuditEntityTypes.CollectionItem, item.Id, command.ActorUserId, Before: before,
             After: CreateCollectionItemCommandHandler.Snapshot(item)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
