@@ -1,7 +1,9 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
+using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Application.Auditing;
 using Dhole.Content.Contracts.Consents;
 using Dhole.Content.Contracts.Submissions;
 using Dhole.Content.Domain.Consents.Entities;
@@ -36,6 +38,7 @@ public sealed class SubmitMarketingFormCommandHandler(
     IMarketingConsentRepository consents,
     IContentItemRepository contentItems,
     IMarketingCampaignRepository campaigns,
+    IContentAuditService audit,
     IUnitOfWork unitOfWork) : ICommandHandler<SubmitMarketingFormCommand, Result<MarketingSubmissionReceiptDto>>
 {
     public async Task<Result<MarketingSubmissionReceiptDto>> HandleAsync(
@@ -127,8 +130,25 @@ public sealed class SubmitMarketingFormCommandHandler(
         }
 
         await submissions.AddAsync(submission, cancellationToken);
+        await audit.PublishAsync(new ContentAuditEvent(
+            ContentAuditEventTypes.MarketingSubmissionCreated,
+            ContentAuditActions.Created,
+            ContentAuditEntityTypes.MarketingSubmission,
+            submission.Id,
+            After: SubmissionSnapshot(submission),
+            Metadata: new { FormSiteKey = form.SiteKey }), cancellationToken);
+
         foreach (var consent in consentEntities)
+        {
             await consents.AddAsync(consent, cancellationToken);
+            await audit.PublishAsync(new ContentAuditEvent(
+                ContentAuditEventTypes.MarketingConsentCreated,
+                ContentAuditActions.Created,
+                ContentAuditEntityTypes.MarketingConsent,
+                consent.Id,
+                After: ConsentSnapshot(consent)), cancellationToken);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new MarketingSubmissionReceiptDto(
@@ -136,4 +156,34 @@ public sealed class SubmitMarketingFormCommandHandler(
             submission.SubmittedAtUtc,
             form.SuccessMessage));
     }
+
+    internal static object SubmissionSnapshot(MarketingSubmission submission) => new
+    {
+        submission.Id,
+        submission.FormId,
+        submission.ContentId,
+        submission.CampaignId,
+        submission.SubmittedAtUtc,
+        submission.Status,
+        submission.SourceUrl,
+        submission.ReferrerUrl,
+        submission.UtmSource,
+        submission.UtmMedium,
+        submission.UtmCampaign,
+        submission.UtmContent,
+        submission.UtmTerm,
+        submission.CorrelationId
+    };
+
+    internal static object ConsentSnapshot(MarketingConsent consent) => new
+    {
+        consent.Id,
+        consent.LeadId,
+        consent.SubmissionId,
+        consent.Purpose,
+        consent.Granted,
+        consent.PolicyVersion,
+        consent.Source,
+        consent.CapturedAtUtc
+    };
 }
