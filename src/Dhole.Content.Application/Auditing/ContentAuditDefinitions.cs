@@ -33,6 +33,7 @@ public static class ContentAuditEntityTypes
     public const string MediaReference = "MediaReference";
     public const string ContentMedia = "ContentMedia";
     public const string NavigationMenu = "NavigationMenu";
+    public const string Site = "Site";
     public const string SiteSetting = "SiteSetting";
     public const string Placement = "Placement";
     public const string PlacementItem = "PlacementItem";
@@ -74,6 +75,8 @@ public static class ContentAuditEventTypes
     public const string ContentMediaUpdated = "content.media.link-updated";
     public const string ContentMediaDeleted = "content.media.unlinked";
     public const string MenuUpdated = "content.menu.updated";
+    public const string SiteCreated = "content.site.created";
+    public const string SiteUpdated = "content.site.updated";
     public const string SettingUpdated = "content.setting.updated";
     public const string SettingDeleted = "content.setting.deleted";
     public const string PlacementCreated = "content.placement.created";
