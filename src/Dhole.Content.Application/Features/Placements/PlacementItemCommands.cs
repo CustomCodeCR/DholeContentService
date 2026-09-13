@@ -75,6 +75,8 @@ public sealed class UpdatePlacementItemCommandHandler(
             return Result.Failure(ContentErrors.PlacementContentNotAllowed);
 
         var before = CreatePlacementItemCommandHandler.Snapshot(item);
+        var previousSortOrder = item.SortOrder;
+        var previousIsActive = item.IsActive;
         try
         {
             item.Update(command.SortOrder, command.ValidFromUtc, command.ValidToUtc, command.SettingsJson, command.IsActive, command.ActorUserId);
@@ -84,7 +86,10 @@ public sealed class UpdatePlacementItemCommandHandler(
             return Result.Failure(ContentErrors.InvalidPlacementData);
         }
 
-        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.PlacementItemUpdated, ContentAuditActions.Updated,
+        var action = ContentAuditActions.ResolveMutation(
+            statusChanged: previousIsActive != item.IsActive,
+            reordered: previousSortOrder != item.SortOrder);
+        await audit.PublishAsync(new ContentAuditEvent(ContentAuditEventTypes.PlacementItemUpdated, action,
             ContentAuditEntityTypes.PlacementItem, item.Id, command.ActorUserId, Before: before,
             After: CreatePlacementItemCommandHandler.Snapshot(item)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
