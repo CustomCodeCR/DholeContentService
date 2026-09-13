@@ -4,6 +4,7 @@ using CustomCodeFramework.Core.Abstractions;
 using Dhole.Content.Api.Endpoints;
 using Dhole.Content.Api.Grpc;
 using Dhole.Content.Api.Middleware;
+using Dhole.Content.Api.Preview;
 using Dhole.Content.Application.DependencyInjection;
 using Dhole.Content.Infrastructure.DependencyInjection;
 using Dhole.Content.Infrastructure.Time;
@@ -34,6 +35,11 @@ builder.Services.AddCors(options =>
         }
     )
 );
+
+var previewSigningSecret = builder.Configuration["Preview:SigningKey"]
+    ?? builder.Configuration["Auth:Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("Preview:SigningKey or Auth:Jwt:SecretKey must be configured.");
+builder.Services.AddSingleton(new ContentPreviewTokenService(previewSigningSecret));
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -106,6 +112,7 @@ app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
 app.MapSiteSettingEndpoints();
 app.MapSiteEndpoints();
+app.MapPreviewEndpoints();
 
 // Canonical administrative API. Only authenticated /api/content endpoints are mirrored;
 // anonymous legacy routes are intentionally excluded from /api/cms/*.
