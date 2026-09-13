@@ -1,8 +1,10 @@
 using CustomCodeFramework.Core.Results;
 using CustomCodeFramework.Cqrs.Commands;
 using CustomCodeFramework.Persistence.Abstractions;
+using Dhole.Content.Application.Abstractions.Auditing;
 using Dhole.Content.Application.Abstractions.Messaging;
 using Dhole.Content.Application.Abstractions.Repositories;
+using Dhole.Content.Application.Auditing;
 using Dhole.Content.Domain.Meetings.Entities;
 using Dhole.Content.Domain.Shared;
 
@@ -25,7 +27,49 @@ public sealed record RejectMeetingCommand(Guid Id, Guid? ActorUserId) : ICommand
 public sealed record CancelMeetingCommand(Guid Id, Guid? ActorUserId) : ICommand<Result>;
 public sealed record CompleteMeetingCommand(Guid Id, Guid? ActorUserId) : ICommand<Result>;
 
-public sealed class CreateMeetingTypeCommandHandler(ISiteRepository sites, IMeetingTypeRepository meetingTypes, IUnitOfWork unitOfWork)
+internal static class MeetingAuditSnapshots
+{
+    public static object From(MeetingType item) => new
+    {
+        item.Id,
+        item.SiteKey,
+        item.Name,
+        item.Slug,
+        item.Description,
+        item.DurationMinutes,
+        item.BufferMinutes,
+        item.MeetingMode,
+        item.AssignedUserId,
+        item.AssignedTeamKey,
+        item.SettingsJson,
+        item.IsActive
+    };
+
+    public static object From(MeetingRequest request) => new
+    {
+        request.Id,
+        request.MeetingTypeId,
+        request.LeadId,
+        request.SubmissionId,
+        request.RequestedStartUtc,
+        request.RequestedEndUtc,
+        request.TimeZone,
+        request.Subject,
+        request.Status,
+        request.AssignedUserId,
+        request.ConfirmedStartUtc,
+        request.ConfirmedEndUtc,
+        request.ExternalProvider,
+        request.ExternalEventId,
+        request.MeetingUrl
+    };
+}
+
+public sealed class CreateMeetingTypeCommandHandler(
+    ISiteRepository sites,
+    IMeetingTypeRepository meetingTypes,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateMeetingTypeCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> HandleAsync(CreateMeetingTypeCommand command, CancellationToken cancellationToken = default)
@@ -40,6 +84,13 @@ public sealed class CreateMeetingTypeCommandHandler(ISiteRepository sites, IMeet
                 command.DurationMinutes, command.BufferMinutes, command.MeetingMode, command.AssignedUserId,
                 command.AssignedTeamKey, command.SettingsJson, command.IsActive, command.ActorUserId);
             await meetingTypes.AddAsync(item, cancellationToken);
+            await audit.PublishAsync(new ContentAuditEvent(
+                ContentAuditEventTypes.MeetingTypeCreated,
+                ContentAuditActions.Created,
+                ContentAuditEntityTypes.MeetingType,
+                item.Id,
+                command.ActorUserId,
+                After: MeetingAuditSnapshots.From(item)), cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success(item.Id);
         }
@@ -47,7 +98,11 @@ public sealed class CreateMeetingTypeCommandHandler(ISiteRepository sites, IMeet
     }
 }
 
-public sealed class UpdateMeetingTypeCommandHandler(ISiteRepository sites, IMeetingTypeRepository meetingTypes, IUnitOfWork unitOfWork)
+public sealed class UpdateMeetingTypeCommandHandler(
+    ISiteRepository sites,
+    IMeetingTypeRepository meetingTypes,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateMeetingTypeCommand, Result>
 {
     public async Task<Result> HandleAsync(UpdateMeetingTypeCommand command, CancellationToken cancellationToken = default)
@@ -58,11 +113,21 @@ public sealed class UpdateMeetingTypeCommandHandler(ISiteRepository sites, IMeet
         if (site is null || site.IsDeleted) return Result.Failure(ContentErrors.SiteNotFound);
         if (await meetingTypes.ExistsBySlugAsync(command.SiteKey, command.Slug, command.Id, cancellationToken))
             return Result.Failure(ContentErrors.MeetingTypeSlugAlreadyExists);
+        var before = MeetingAuditSnapshots.From(item);
+        var previousIsActive = item.IsActive;
         try
         {
             item.Update(command.SiteKey, command.Name, command.Slug, command.Description, command.DurationMinutes,
                 command.BufferMinutes, command.MeetingMode, command.AssignedUserId, command.AssignedTeamKey,
                 command.SettingsJson, command.IsActive, command.ActorUserId);
+            await audit.PublishAsync(new ContentAuditEvent(
+                ContentAuditEventTypes.MeetingTypeUpdated,
+                ContentAuditActions.ResolveMutation(statusChanged: previousIsActive != item.IsActive),
+                ContentAuditEntityTypes.MeetingType,
+                item.Id,
+                command.ActorUserId,
+                Before: before,
+                After: MeetingAuditSnapshots.From(item)), cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();
         }
@@ -70,14 +135,25 @@ public sealed class UpdateMeetingTypeCommandHandler(ISiteRepository sites, IMeet
     }
 }
 
-public sealed class DeleteMeetingTypeCommandHandler(IMeetingTypeRepository meetingTypes, IUnitOfWork unitOfWork)
+public sealed class DeleteMeetingTypeCommandHandler(
+    IMeetingTypeRepository meetingTypes,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteMeetingTypeCommand, Result>
 {
     public async Task<Result> HandleAsync(DeleteMeetingTypeCommand command, CancellationToken cancellationToken = default)
     {
         var item = await meetingTypes.GetByIdAsync(command.Id, cancellationToken);
         if (item is null || item.IsDeleted) return Result.Failure(ContentErrors.MeetingTypeNotFound);
+        var before = MeetingAuditSnapshots.From(item);
         item.Delete(command.ActorUserId);
+        await audit.PublishAsync(new ContentAuditEvent(
+            ContentAuditEventTypes.MeetingTypeDeleted,
+            ContentAuditActions.Deleted,
+            ContentAuditEntityTypes.MeetingType,
+            item.Id,
+            command.ActorUserId,
+            Before: before), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
@@ -90,6 +166,7 @@ public sealed class CreateMeetingRequestCommandHandler(
     IMarketingFormRepository forms,
     IMeetingRequestRepository requests,
     IIntegrationEventOutboxWriter outbox,
+    IContentAuditService audit,
     IUnitOfWork unitOfWork)
     : ICommandHandler<CreateMeetingRequestCommand, Result<Guid>>
 {
@@ -123,6 +200,13 @@ public sealed class CreateMeetingRequestCommandHandler(
             var request = MeetingRequest.Create(type.Id, command.LeadId, command.SubmissionId, command.RequestedStartUtc,
                 requestedEnd, command.TimeZone, command.Subject, command.Message, type.AssignedUserId, command.ActorUserId);
             await requests.AddAsync(request, cancellationToken);
+            await audit.PublishAsync(new ContentAuditEvent(
+                ContentAuditEventTypes.MeetingRequestCreated,
+                ContentAuditActions.Created,
+                ContentAuditEntityTypes.MeetingRequest,
+                request.Id,
+                command.ActorUserId,
+                After: MeetingAuditSnapshots.From(request)), cancellationToken);
             await outbox.WriteAsync(
                 MeetingNotificationIntegration.RequestedEventName,
                 MeetingNotificationIntegration.RequestedEventType,
@@ -140,25 +224,45 @@ public sealed class CreateMeetingRequestCommandHandler(
 
 internal static class MeetingRequestCommandHelpers
 {
-    public static async Task<Result> ApplyAsync(IMeetingRequestRepository requests, IUnitOfWork unitOfWork, Guid id,
-        Action<MeetingRequest> action, CancellationToken cancellationToken)
+    public static async Task<Result> ApplyAsync(
+        IMeetingRequestRepository requests,
+        IContentAuditService audit,
+        IUnitOfWork unitOfWork,
+        Guid id,
+        Guid? actorUserId,
+        Action<MeetingRequest> action,
+        string auditAction,
+        CancellationToken cancellationToken)
     {
         var request = await requests.GetByIdAsync(id, cancellationToken);
         if (request is null || request.IsDeleted) return Result.Failure(ContentErrors.MeetingRequestNotFound);
+        var before = MeetingAuditSnapshots.From(request);
         try { action(request); }
         catch (InvalidOperationException) { return Result.Failure(ContentErrors.InvalidMeetingState); }
         catch (ArgumentException) { return Result.Failure(ContentErrors.InvalidMeetingData); }
+        await audit.PublishAsync(new ContentAuditEvent(
+            ContentAuditEventTypes.MeetingRequestStatusChanged,
+            auditAction,
+            ContentAuditEntityTypes.MeetingRequest,
+            request.Id,
+            actorUserId,
+            Before: before,
+            After: MeetingAuditSnapshots.From(request)), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }
 
-public sealed class MarkMeetingPendingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+public sealed class MarkMeetingPendingCommandHandler(
+    IMeetingRequestRepository requests,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<MarkMeetingPendingCommand, Result>
 {
     public Task<Result> HandleAsync(MarkMeetingPendingCommand command, CancellationToken cancellationToken = default)
-        => MeetingRequestCommandHelpers.ApplyAsync(requests, unitOfWork, command.Id,
-            item => item.MarkPendingConfirmation(command.AssignedUserId, command.ActorUserId), cancellationToken);
+        => MeetingRequestCommandHelpers.ApplyAsync(requests, audit, unitOfWork, command.Id, command.ActorUserId,
+            item => item.MarkPendingConfirmation(command.AssignedUserId, command.ActorUserId),
+            ContentAuditActions.StatusChanged, cancellationToken);
 }
 
 public sealed class ConfirmMeetingCommandHandler(
@@ -168,6 +272,7 @@ public sealed class ConfirmMeetingCommandHandler(
     IMarketingSubmissionRepository submissions,
     IMarketingFormFieldRepository formFields,
     IIntegrationEventOutboxWriter outbox,
+    IContentAuditService audit,
     IUnitOfWork unitOfWork)
     : ICommandHandler<ConfirmMeetingCommand, Result>
 {
@@ -204,10 +309,19 @@ public sealed class ConfirmMeetingCommandHandler(
         if (string.IsNullOrWhiteSpace(clientEmail))
             return Result.Failure(ContentErrors.InvalidMeetingData);
 
+        var before = MeetingAuditSnapshots.From(request);
         try
         {
             request.Confirm(command.ConfirmedStartUtc, command.ConfirmedEndUtc, command.AssignedUserId,
                 command.ExternalProvider, command.ExternalEventId, command.MeetingUrl, command.ActorUserId);
+            await audit.PublishAsync(new ContentAuditEvent(
+                ContentAuditEventTypes.MeetingRequestStatusChanged,
+                ContentAuditActions.StatusChanged,
+                ContentAuditEntityTypes.MeetingRequest,
+                request.Id,
+                command.ActorUserId,
+                Before: before,
+                After: MeetingAuditSnapshots.From(request)), cancellationToken);
             await outbox.WriteAsync(
                 MeetingNotificationIntegration.ConfirmedEventName,
                 MeetingNotificationIntegration.ConfirmedEventType,
@@ -224,21 +338,35 @@ public sealed class ConfirmMeetingCommandHandler(
     }
 }
 
-public sealed class RejectMeetingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+public sealed class RejectMeetingCommandHandler(
+    IMeetingRequestRepository requests,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<RejectMeetingCommand, Result>
 {
     public Task<Result> HandleAsync(RejectMeetingCommand command, CancellationToken cancellationToken = default)
-        => MeetingRequestCommandHelpers.ApplyAsync(requests, unitOfWork, command.Id, item => item.Reject(command.ActorUserId), cancellationToken);
+        => MeetingRequestCommandHelpers.ApplyAsync(requests, audit, unitOfWork, command.Id, command.ActorUserId,
+            item => item.Reject(command.ActorUserId), ContentAuditActions.Rejected, cancellationToken);
 }
-public sealed class CancelMeetingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+
+public sealed class CancelMeetingCommandHandler(
+    IMeetingRequestRepository requests,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CancelMeetingCommand, Result>
 {
     public Task<Result> HandleAsync(CancelMeetingCommand command, CancellationToken cancellationToken = default)
-        => MeetingRequestCommandHelpers.ApplyAsync(requests, unitOfWork, command.Id, item => item.Cancel(command.ActorUserId), cancellationToken);
+        => MeetingRequestCommandHelpers.ApplyAsync(requests, audit, unitOfWork, command.Id, command.ActorUserId,
+            item => item.Cancel(command.ActorUserId), ContentAuditActions.StatusChanged, cancellationToken);
 }
-public sealed class CompleteMeetingCommandHandler(IMeetingRequestRepository requests, IUnitOfWork unitOfWork)
+
+public sealed class CompleteMeetingCommandHandler(
+    IMeetingRequestRepository requests,
+    IContentAuditService audit,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CompleteMeetingCommand, Result>
 {
     public Task<Result> HandleAsync(CompleteMeetingCommand command, CancellationToken cancellationToken = default)
-        => MeetingRequestCommandHelpers.ApplyAsync(requests, unitOfWork, command.Id, item => item.Complete(command.ActorUserId), cancellationToken);
+        => MeetingRequestCommandHelpers.ApplyAsync(requests, audit, unitOfWork, command.Id, command.ActorUserId,
+            item => item.Complete(command.ActorUserId), ContentAuditActions.StatusChanged, cancellationToken);
 }
