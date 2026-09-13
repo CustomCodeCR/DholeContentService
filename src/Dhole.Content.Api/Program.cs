@@ -106,6 +106,11 @@ app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
 app.MapSiteSettingEndpoints();
 app.MapSiteEndpoints();
+
+// Canonical administrative API. Only authenticated /api/content endpoints are mirrored;
+// anonymous legacy routes are intentionally excluded from /api/cms/*.
+app.MapCmsAdminAliases();
+
 app.MapPublicContentEndpoints();
 
 using (var scope = app.Services.CreateScope())
