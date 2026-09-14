@@ -11,7 +11,8 @@ public sealed record PageBuilderOperationRequest(
     string? BlockType,
     int? TargetIndex,
     bool? IsVisible,
-    string? DataJson
+    string? DataJson,
+    string? AnimationJson = null
 );
 
 public sealed record PageBuilderBlockTypeDto(

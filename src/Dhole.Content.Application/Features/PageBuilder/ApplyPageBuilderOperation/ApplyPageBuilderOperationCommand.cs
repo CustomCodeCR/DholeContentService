@@ -12,5 +12,6 @@ public sealed record ApplyPageBuilderOperationCommand(
     int? TargetIndex,
     bool? IsVisible,
     string? DataJson,
+    string? AnimationJson,
     Guid? ActorUserId
 ) : ICommand<Result<PageBuilderDocumentDto>>;
