@@ -16,46 +16,24 @@ public static class PageBuilderEndpoints
             .WithTags("Page Builder")
             .RequireAuthorization();
 
-        group.MapGet(
-                "/block-types",
-                () => EndpointResults.Ok(PageBuilderBlockTypes.All
-                    .Select(type => new PageBuilderBlockTypeDto(type, GetLabel(type)))
-                    .ToArray()))
+        group.MapGet("/block-types", () => EndpointResults.Ok(PageBuilderBlockTypes.All.Select(type => new PageBuilderBlockTypeDto(type, GetLabel(type))).ToArray()))
             .RequireScope(ContentScopeNames.View);
 
-        group.MapGet(
-                "/{contentId:guid}",
-                async (
-                    Guid contentId,
-                    IQueryDispatcher dispatcher,
-                    HttpContext context,
-                    CancellationToken cancellationToken
-                ) => EndpointResults.FromResult(
-                    await dispatcher.DispatchAsync(new GetPageBuilderQuery(contentId), cancellationToken),
-                    context))
+        group.MapGet("/{contentId:guid}", async (Guid contentId, IQueryDispatcher dispatcher, HttpContext context, CancellationToken cancellationToken) =>
+            EndpointResults.FromResult(await dispatcher.DispatchAsync(new GetPageBuilderQuery(contentId), cancellationToken), context))
             .RequireScope(ContentScopeNames.View);
 
-        group.MapPost(
-                "/{contentId:guid}/operations",
-                async (
-                    Guid contentId,
-                    PageBuilderOperationRequest request,
-                    ICommandDispatcher dispatcher,
-                    HttpContext context,
-                    CancellationToken cancellationToken
-                ) => EndpointResults.FromResult(
-                    await dispatcher.DispatchAsync(
-                        new ApplyPageBuilderOperationCommand(
-                            contentId,
-                            request.Operation,
-                            request.BlockId,
-                            request.BlockType,
-                            request.TargetIndex,
-                            request.IsVisible,
-                            request.DataJson,
-                            context.GetCurrentUserId()),
-                        cancellationToken),
-                    context))
+        group.MapPost("/{contentId:guid}/operations", async (Guid contentId, PageBuilderOperationRequest request, ICommandDispatcher dispatcher, HttpContext context, CancellationToken cancellationToken) =>
+            EndpointResults.FromResult(await dispatcher.DispatchAsync(new ApplyPageBuilderOperationCommand(
+                contentId,
+                request.Operation,
+                request.BlockId,
+                request.BlockType,
+                request.TargetIndex,
+                request.IsVisible,
+                request.DataJson,
+                request.AnimationJson,
+                context.GetCurrentUserId()), cancellationToken), context))
             .RequireScope(ContentScopeNames.PagesEdit);
 
         return app;

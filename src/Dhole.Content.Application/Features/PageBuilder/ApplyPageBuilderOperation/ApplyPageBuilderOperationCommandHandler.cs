@@ -19,17 +19,12 @@ public sealed class ApplyPageBuilderOperationCommandHandler(
     IUnitOfWork unitOfWork
 ) : ICommandHandler<ApplyPageBuilderOperationCommand, Result<PageBuilderDocumentDto>>
 {
-    public async Task<Result<PageBuilderDocumentDto>> HandleAsync(
-        ApplyPageBuilderOperationCommand command,
-        CancellationToken cancellationToken = default)
+    public async Task<Result<PageBuilderDocumentDto>> HandleAsync(ApplyPageBuilderOperationCommand command, CancellationToken cancellationToken = default)
     {
         var item = await contents.GetByIdWithDetailsAsync(command.ContentId, cancellationToken);
-        if (item is null || item.IsDeleted)
-            return Result.Failure<PageBuilderDocumentDto>(ContentErrors.ContentNotFound);
-        if (item.Type != ContentType.Page)
-            return Result.Failure<PageBuilderDocumentDto>(ContentErrors.PageBuilderOnlyPages);
-        if (item.Status == ContentStatus.PendingReview)
-            return Result.Failure<PageBuilderDocumentDto>(ContentErrors.InvalidContentState);
+        if (item is null || item.IsDeleted) return Result.Failure<PageBuilderDocumentDto>(ContentErrors.ContentNotFound);
+        if (item.Type != ContentType.Page) return Result.Failure<PageBuilderDocumentDto>(ContentErrors.PageBuilderOnlyPages);
+        if (item.Status == ContentStatus.PendingReview) return Result.Failure<PageBuilderDocumentDto>(ContentErrors.InvalidContentState);
 
         string normalized;
         try
@@ -41,7 +36,8 @@ public sealed class ApplyPageBuilderOperationCommandHandler(
                 command.BlockType,
                 command.TargetIndex,
                 command.IsVisible,
-                command.DataJson);
+                command.DataJson,
+                command.AnimationJson);
         }
         catch (KeyNotFoundException)
         {
@@ -54,40 +50,29 @@ public sealed class ApplyPageBuilderOperationCommandHandler(
 
         var before = ContentAuditSnapshots.From(item);
         item.CreateRevision(command.ActorUserId, $"page-builder:{command.Operation}");
-        item.Update(
-            item.Title,
-            item.Slug,
-            item.Excerpt,
-            normalized,
-            item.RenderedHtml,
-            item.FeaturedMediaId,
-            item.SortOrder,
-            item.IsFeatured,
-            item.Locale,
-            command.ActorUserId);
+        item.Update(item.Title, item.Slug, item.Excerpt, normalized, item.RenderedHtml, item.FeaturedMediaId, item.SortOrder, item.IsFeatured, item.Locale, command.ActorUserId);
 
         var action = string.Equals(command.Operation, "move", StringComparison.OrdinalIgnoreCase)
             ? ContentAuditActions.Reordered
             : ContentAuditActions.Updated;
 
-        await audit.PublishAsync(
-            new ContentAuditEvent(
-                ContentAuditEventTypes.ContentUpdated,
-                action,
-                ContentAuditEntityTypes.ContentItem,
-                item.Id,
-                command.ActorUserId,
-                Before: before,
-                After: ContentAuditSnapshots.From(item),
-                Payload: new
-                {
-                    Operation = command.Operation,
-                    command.BlockId,
-                    command.BlockType,
-                    command.TargetIndex,
-                    command.IsVisible
-                }),
-            cancellationToken);
+        await audit.PublishAsync(new ContentAuditEvent(
+            ContentAuditEventTypes.ContentUpdated,
+            action,
+            ContentAuditEntityTypes.ContentItem,
+            item.Id,
+            command.ActorUserId,
+            Before: before,
+            After: ContentAuditSnapshots.From(item),
+            Payload: new
+            {
+                Operation = command.Operation,
+                command.BlockId,
+                command.BlockType,
+                command.TargetIndex,
+                command.IsVisible,
+                AnimationChanged = command.AnimationJson is not null
+            }), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cache.RemoveContentAsync(item.SiteKey, item.Slug, cancellationToken);

@@ -5,7 +5,21 @@ namespace Dhole.Content.Domain.PageBuilder;
 
 public static class PageBuilderDocument
 {
-    private static readonly string[] AllowedBlockProperties = ["id", "type", "isVisible", "data"];
+    private static readonly string[] AllowedBlockProperties = ["id", "type", "isVisible", "data", "animation"];
+    private static readonly string[] AllowedAnimationProperties = ["preset", "duration", "delay", "easing", "stagger", "trigger", "once", "distance"];
+    private static readonly HashSet<string> AllowedAnimationPresets = new(StringComparer.Ordinal)
+    {
+        "none", "fade", "fade-up", "fade-down", "fade-left", "fade-right",
+        "slide-up", "slide-left", "slide-right", "zoom-in", "zoom-out", "scale", "blur-in"
+    };
+    private static readonly HashSet<string> AllowedAnimationEasings = new(StringComparer.Ordinal)
+    {
+        "standard", "decelerate", "accelerate", "linear"
+    };
+    private static readonly HashSet<string> AllowedAnimationTriggers = new(StringComparer.Ordinal)
+    {
+        "scroll", "load"
+    };
 
     private static readonly string[] ForbiddenPropertyNames =
     [
@@ -33,7 +47,8 @@ public static class PageBuilderDocument
         string? blockType,
         int? targetIndex,
         bool? isVisible,
-        string? dataJson)
+        string? dataJson,
+        string? animationJson = null)
     {
         var blocks = ParseArray(blocksJson);
         ValidateBlocks(blocks);
@@ -53,6 +68,7 @@ public static class PageBuilderDocument
                     ["isVisible"] = isVisible ?? true,
                     ["data"] = ParseData(dataJson)
                 };
+                if (animationJson is not null) block["animation"] = ParseAnimation(animationJson);
                 Insert(blocks, block, targetIndex);
                 break;
             }
@@ -66,6 +82,7 @@ public static class PageBuilderDocument
                     block["type"] = PageBuilderBlockTypes.Normalize(blockType);
                 }
                 if (dataJson is not null) block["data"] = ParseData(dataJson);
+                if (animationJson is not null) block["animation"] = ParseAnimation(animationJson);
                 if (isVisible.HasValue) block["isVisible"] = isVisible.Value;
                 break;
             }
@@ -140,6 +157,21 @@ public static class PageBuilderDocument
         }
     }
 
+    private static JsonObject ParseAnimation(string animationJson)
+    {
+        try
+        {
+            var node = JsonNode.Parse(string.IsNullOrWhiteSpace(animationJson) ? "{}" : animationJson);
+            var animation = node as JsonObject ?? throw new ArgumentException("AnimationJson debe ser un objeto JSON.", nameof(animationJson));
+            ValidateAndNormalizeAnimation(animation);
+            return animation;
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException("AnimationJson no contiene JSON válido.", nameof(animationJson), ex);
+        }
+    }
+
     private static void ValidateBlocks(JsonArray blocks)
     {
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -165,7 +197,60 @@ public static class PageBuilderDocument
             block["data"] ??= new JsonObject();
             if (block["data"] is not JsonObject) throw new ArgumentException("La propiedad data del bloque debe ser un objeto JSON.");
             ValidateSafeNode(block["data"]!, "data");
+
+            if (block["animation"] is not null)
+            {
+                if (block["animation"] is not JsonObject animation)
+                    throw new ArgumentException("La propiedad animation del bloque debe ser un objeto JSON.");
+                ValidateAndNormalizeAnimation(animation);
+            }
         }
+    }
+
+    private static void ValidateAndNormalizeAnimation(JsonObject animation)
+    {
+        foreach (var pair in animation)
+            if (!AllowedAnimationProperties.Contains(pair.Key, StringComparer.Ordinal))
+                throw new ArgumentException($"La propiedad '{pair.Key}' no forma parte del esquema de animación.");
+
+        var preset = ReadOptionalString(animation, "preset", "none");
+        var easing = ReadOptionalString(animation, "easing", "standard");
+        var trigger = ReadOptionalString(animation, "trigger", "scroll");
+        if (!AllowedAnimationPresets.Contains(preset)) throw new ArgumentException("preset de animación no es válido.");
+        if (!AllowedAnimationEasings.Contains(easing)) throw new ArgumentException("easing de animación no es válido.");
+        if (!AllowedAnimationTriggers.Contains(trigger)) throw new ArgumentException("trigger de animación no es válido.");
+
+        animation["preset"] = preset;
+        animation["duration"] = ReadBoundedInt(animation, "duration", 600, 0, 3000);
+        animation["delay"] = ReadBoundedInt(animation, "delay", 0, 0, 3000);
+        animation["easing"] = easing;
+        animation["stagger"] = ReadBoundedInt(animation, "stagger", 100, 0, 1000);
+        animation["trigger"] = trigger;
+        animation["once"] = ReadOptionalBool(animation, "once", true);
+        animation["distance"] = ReadBoundedInt(animation, "distance", 32, 0, 160);
+    }
+
+    private static string ReadOptionalString(JsonObject obj, string propertyName, string fallback)
+    {
+        if (obj[propertyName] is null) return fallback;
+        if (obj[propertyName] is JsonValue value && value.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text))
+            return text.Trim();
+        throw new ArgumentException($"{propertyName} debe ser un string no vacío.");
+    }
+
+    private static int ReadBoundedInt(JsonObject obj, string propertyName, int fallback, int min, int max)
+    {
+        if (obj[propertyName] is null) return fallback;
+        if (obj[propertyName] is JsonValue value && value.TryGetValue<int>(out var number) && number >= min && number <= max)
+            return number;
+        throw new ArgumentException($"{propertyName} debe ser un entero entre {min} y {max}.");
+    }
+
+    private static bool ReadOptionalBool(JsonObject obj, string propertyName, bool fallback)
+    {
+        if (obj[propertyName] is null) return fallback;
+        if (obj[propertyName] is JsonValue value && value.TryGetValue<bool>(out var result)) return result;
+        throw new ArgumentException($"{propertyName} debe ser booleano.");
     }
 
     private static void ValidateSafeNode(JsonNode node, string path)
