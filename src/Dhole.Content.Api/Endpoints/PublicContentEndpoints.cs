@@ -40,6 +40,7 @@ public static class PublicContentEndpoints
     {
         group.MapGet("/resolve", ResolveRouteAsync);
         group.MapGet("/routes/resolve", ResolveRouteAsync);
+        group.MapGet("/media/{id:guid}/content", GetPublicMediaContentAsync);
 
         group.MapGet("/pages", async (int? pageNumber, int? pageSize, string? siteKey, string? search, string? locale, IQueryDispatcher dispatcher, CancellationToken ct) =>
             await GetPublishedListAsync(ContentType.Page, pageNumber, pageSize, siteKey, search, locale, dispatcher, ct));
@@ -145,6 +146,28 @@ public static class PublicContentEndpoints
             if (!activeTypes.Any(item => item.Id == request.MeetingTypeId)) return Results.NotFound();
             return EndpointResults.FromResult(await commandDispatcher.DispatchAsync(new CreateMeetingRequestCommand(request.MeetingTypeId, null, null, request.RequestedStartUtc, request.RequestedEndUtc, request.TimeZone, request.Subject, request.Message, null), ct), context);
         });
+    }
+
+    private static async Task<IResult> GetPublicMediaContentAsync(
+        Guid id,
+        IMediaReferenceRepository mediaReferences,
+        IHttpClientFactory clients,
+        HttpContext context,
+        CancellationToken ct)
+    {
+        var media = await mediaReferences.GetByIdAsync(id, ct);
+        if (media is null || media.IsDeleted) return Results.NotFound();
+
+        var client = clients.CreateClient("DholeStorage");
+        using var response = await client.GetAsync($"api/v1/storage/files/{media.StorageFileId}/content", ct);
+        if (!response.IsSuccessStatusCode)
+            return Results.StatusCode((int)response.StatusCode);
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? media.ContentType;
+        context.Response.Headers.CacheControl = "public, max-age=0, must-revalidate";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return Results.File(bytes, contentType, enableRangeProcessing: true);
     }
 
     private static async Task<IResult> ResolveRouteAsync(string path, string? siteKey, string? locale, IQueryDispatcher dispatcher, HttpContext context, CancellationToken ct)
