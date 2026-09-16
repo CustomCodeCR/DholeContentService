@@ -192,6 +192,7 @@ public static class EditorEndpoints
                     }
 
                     var seo = request.Seo;
+                    var actorUserId = context.GetCurrentUserId();
                     var result = await dispatcher.DispatchAsync(
                         new CreateContentItemCommand(
                             type.ToString(),
@@ -201,7 +202,7 @@ public static class EditorEndpoints
                             "[]",
                             request.ContentHtml,
                             request.FeaturedMediaId,
-                            null,
+                            actorUserId,
                             string.IsNullOrWhiteSpace(request.Locale) ? "es-CR" : request.Locale,
                             request.SortOrder ?? 0,
                             request.IsFeatured ?? false,
@@ -220,7 +221,7 @@ public static class EditorEndpoints
                             request.UnpublishAtUtc,
                             request.SitemapPriority,
                             request.SitemapChangeFrequency,
-                            context.GetCurrentUserId()
+                            actorUserId
                         ),
                         cancellationToken
                     );
