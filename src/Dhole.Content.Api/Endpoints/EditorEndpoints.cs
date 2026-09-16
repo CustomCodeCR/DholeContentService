@@ -34,6 +34,7 @@ public static class EditorEndpoints
                         [
                             new("Page", "Página"),
                             new("News", "Noticia"),
+                            new("Post", "Artículo"),
                             new("Banner", "Banner"),
                             new("Announcement", "Anuncio"),
                             new("Video", "Video"),
@@ -43,6 +44,7 @@ public static class EditorEndpoints
                             new("PendingReview", "Pendiente de aprobación"),
                             new("Scheduled", "Programado"),
                             new("Published", "Publicado"),
+                            new("Rejected", "Rechazado"),
                             new("Archived", "Archivado"),
                         ],
                         "es-CR",
