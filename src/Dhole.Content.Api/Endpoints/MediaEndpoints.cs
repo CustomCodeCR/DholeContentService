@@ -177,6 +177,10 @@ public static class MediaEndpoints
             Content = content
         };
 
+        var authorization = context.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrWhiteSpace(authorization))
+            outbound.Headers.TryAddWithoutValidation("Authorization", authorization);
+
         using var response = await client.SendAsync(outbound, cancellationToken);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
