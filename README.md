@@ -36,3 +36,7 @@ CMS headless de Grupo Castro Fallas para Dhole. Sustituye PublishCore y concentr
 - CRUD de categorías, etiquetas, menús y settings.
 
 Las imágenes y videos se cargan a `DholeStorageService` usando `sourceService=DholeContentService`.
+
+## Decisiones de arquitectura
+
+- [ADR-0001 — Contrato cross-repo Dhole CMS → Fennec realtime](docs/adr/0001-cms-fennec-cross-repo-contract.md)
