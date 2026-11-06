@@ -31,6 +31,14 @@ builder.Services.AddInfrastructure(builder.Configuration);
 var storageUrl = builder.Configuration["ServiceUrls:Storage"] ?? "http://localhost:5207/";
 builder.Services.AddHttpClient("DholeStorage", client => client.BaseAddress = new Uri(storageUrl));
 var app = builder.Build();
+// Content health responses disclose the version of the running API assembly.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Value?.StartsWith("/health", StringComparison.OrdinalIgnoreCase) == true)
+        context.Response.Headers["X-Dhole-Version"] = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+    await next();
+});
+
 app.UseCustomCodeApi();
 app.UseCors(CorsPolicyName);
 if (app.Environment.IsDevelopment()) app.UseCustomCodeSwagger();
