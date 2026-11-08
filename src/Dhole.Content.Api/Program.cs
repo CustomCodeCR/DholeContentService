@@ -64,6 +64,7 @@ app.MapTaxonomyEndpoints();
 app.MapMediaEndpoints();
 app.MapNavigationEndpoints();
 app.MapSiteSettingEndpoints();
+app.MapRealtimeAccessEndpoints();
 app.MapSiteEndpoints();
 app.MapPreviewEndpoints();
 app.MapCmsAdminAliases();
