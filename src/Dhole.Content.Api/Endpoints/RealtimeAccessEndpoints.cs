@@ -5,9 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Dhole.Content.Api.Endpoints;
 
 /// <summary>
-/// F6.13: scoped no-content REST authorization checks for navigation and
-/// settings resources; site keys, values, unpublished content and leads are
-/// never returned in the check response.
+/// F6.13: scoped minimal REST status snapshots for navigation and settings;
+/// site keys, values, unpublished content and leads are never returned.
 /// </summary>
 public static class RealtimeAccessEndpoints
 {
@@ -17,19 +16,28 @@ public static class RealtimeAccessEndpoints
             .WithTags("Realtime Access")
             .RequireAuthorization();
 
+        // Minimal status snapshots avoid returning unpublished navigation items,
+        // site keys, private settings values or marketing data. The UI can
+        // reconcile full content via the existing authorized REST queries.
         group.MapGet("/menu/{id:guid}", async (Guid id, ServiceDbContext db,
             CancellationToken ct) =>
-            await db.NavigationMenus.AsNoTracking()
-                .AnyAsync(x => x.Id == id && !x.IsDeleted, ct)
-                ? Results.Ok() : Results.NotFound())
-            .RequireScope(ContentScopeNames.View);
+        {
+            var snapshot = await db.NavigationMenus.AsNoTracking()
+                .Where(x => x.Id == id && !x.IsDeleted)
+                .Select(x => new { x.Id, x.IsActive })
+                .FirstOrDefaultAsync(ct);
+            return snapshot is null ? Results.NotFound() : Results.Ok(snapshot);
+        }).RequireScope(ContentScopeNames.View);
 
         group.MapGet("/setting/{id:guid}", async (Guid id, ServiceDbContext db,
             CancellationToken ct) =>
-            await db.SiteSettings.AsNoTracking()
-                .AnyAsync(x => x.Id == id && !x.IsDeleted, ct)
-                ? Results.Ok() : Results.NotFound())
-            .RequireScope(ContentScopeNames.View);
+        {
+            var snapshot = await db.SiteSettings.AsNoTracking()
+                .Where(x => x.Id == id && !x.IsDeleted)
+                .Select(x => new { x.Id, x.IsPublic })
+                .FirstOrDefaultAsync(ct);
+            return snapshot is null ? Results.NotFound() : Results.Ok(snapshot);
+        }).RequireScope(ContentScopeNames.View);
         return app;
     }
 }
