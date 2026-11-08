@@ -1,5 +1,7 @@
 # Changelog
 
+- F6.13 (candidato): snapshots REST mínimos de menú y configuración (Id/IsActive e Id/IsPublic), autorización Content.View intacta; no se divulgan site keys, contenido inédito ni valores de ajustes.
+
 ## [1.3.0] - 2026-11-08 (candidato F6.13, NO LIBERADO)
 
 - F6.13: eventos mínimos de cambios en contenidos, menús de navegación y configuraciones del sitio integrados en el mismo EF SaveChanges del Outbox existente.
