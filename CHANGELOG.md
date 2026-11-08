@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2026-11-08 (candidato F9, sin publicación)
+
+- Sincroniza metadatos de versión global del batch Dhole Realtime `rt-20261107-01` a `1.13.10`; actualización PATCH independiente de DholeContentService `1.3.0` → `1.3.1`. No cambia contratos REST, datos, lógica de negocio ni flags; requiere gates F0–F8 y CI de SHA final antes de merge.
+
+
 - F6.13 (candidato): snapshots REST mínimos de menú y configuración (Id/IsActive e Id/IsPublic), autorización Content.View intacta; no se divulgan site keys, contenido inédito ni valores de ajustes.
 
 ## [1.3.0] - 2026-11-08 (candidato F6.13, NO LIBERADO)
