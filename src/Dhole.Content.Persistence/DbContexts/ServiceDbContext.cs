@@ -24,10 +24,12 @@ using Dhole.Content.Domain.Taxonomies.Entities;
 using Dhole.Content.Persistence.Auditing;
 using Dhole.Content.Persistence.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Dhole.Content.Persistence.DbContexts;
 
-public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options) : AppDbContextBase(options)
+public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options,
+    IConfiguration? realtimeConfiguration = null) : AppDbContextBase(options)
 {
     private const string SourceService = "DholeContentService";
 
@@ -61,12 +63,14 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        AppendRealtimeInvalidations();
         AddDomainEventsToOutbox();
         return base.SaveChangesAsync(cancellationToken);
     }
 
     public override int SaveChanges()
     {
+        AppendRealtimeInvalidations();
         AddDomainEventsToOutbox();
         return base.SaveChanges();
     }
@@ -78,6 +82,43 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ServiceDbContext).Assembly);
         modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
         modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
+    }
+
+    private void AppendRealtimeInvalidations()
+    {
+        if (!ContentRealtimeInvalidation.IsEnabled(realtimeConfiguration))
+            return;
+        ChangeTracker.DetectChanges();
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted).ToArray())
+        {
+            var resource = entry.Entity switch
+            {
+                ContentItem item => ("item", item.Id),
+                NavigationMenu item => ("menu", item.Id),
+                SiteSetting item => ("setting", item.Id),
+                _ => ("", Guid.Empty)
+            };
+            if (resource.Item2 == Guid.Empty) continue;
+            var eventId = Guid.NewGuid();
+            var now = DateTimeOffset.UtcNow;
+            var correlation = eventId.ToString("D");
+            var eventType = ContentRealtimeInvalidation.EventType(resource.Item1);
+            OutboxMessages.Add(new OutboxMessage
+            {
+                EventId = eventId,
+                EventType = eventType,
+                EventName = eventType,
+                SourceService = SourceService,
+                PayloadJson = ContentRealtimeInvalidation.Serialize(
+                    eventId, resource.Item2, resource.Item1,
+                    ContentRealtimeInvalidation.NextVersionHint(), now, correlation),
+                CorrelationId = correlation,
+                Status = OutboxMessageStatus.Pending,
+                RetryCount = 0,
+                CreatedAtUtc = now.UtcDateTime
+            });
+        }
     }
 
     private void AddDomainEventsToOutbox()

@@ -52,6 +52,9 @@ internal sealed class OutboxProcessor(ServiceDbContext db, IRedisStreamPublisher
 
     private IReadOnlyCollection<string> ResolveStreamNames(string eventName)
     {
+        if (eventName is "content.item.changed.v1" or "content.menu.changed.v1"
+            or "content.setting.changed.v1")
+            return ["dhole.content.realtime.v1"];
         var configured = configuration[$"Redis:Streams:Destinations:{eventName}"] ?? configuration["Redis:Streams:DefaultStreamName"] ?? "dhole.content.events";
         var streams = configured.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.Ordinal).ToArray();
         return streams.Length == 0 ? ["dhole.content.events"] : streams;

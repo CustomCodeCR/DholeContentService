@@ -1,0 +1,42 @@
+name: Realtime F6.13 Content safe Outbox (isolated)
+on:
+  push:
+    branches: [feature/dhole-realtime-universal-rt-20261107-01]
+    paths:
+      - 'src/Dhole.Content.Persistence/DbContexts/ServiceDbContext.cs'
+      - 'src/Dhole.Content.Api/Program.cs'
+      - 'src/Dhole.Content.Api/Endpoints/RealtimeAccessEndpoints.cs'
+      - 'src/Dhole.Content.Persistence/Messaging/ContentRealtimeInvalidation.cs'
+      - 'src/Dhole.Content.Workers/Outbox/OutboxProcessor.cs'
+      - 'tests/**/F6ContentRealtimeContractTests.cs'
+      - 'version.json'
+      - 'Directory.Build.targets'
+      - 'CHANGELOG.md'
+      - '.github/workflows/realtime-f6-content.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  f6-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Enforce component and ecosystem SemVer
+        run: python3 scripts/verify_dhole_version.py
+      - name: Authenticate GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet nuget update source github --username github-actions --password "$GITHUB_TOKEN" --store-password-in-clear-text --configfile NuGet.Config
+      - name: Restore Content test projects
+        run: dotnet restore tests/Dhole.Content.UnitTests/Dhole.Content.UnitTests.csproj --configfile NuGet.Config
+      - name: Build Content API and tests
+        run: dotnet build tests/Dhole.Content.UnitTests/Dhole.Content.UnitTests.csproj -c Release --no-restore
+      - name: Build Content Outbox worker
+        run: dotnet build src/Dhole.Content.Workers/Dhole.Content.Workers.csproj -c Release
+      - name: Run F6.13 metadata safety tests
+        run: dotnet test tests/Dhole.Content.UnitTests/Dhole.Content.UnitTests.csproj -c Release --no-build --filter FullyQualifiedName~F6ContentRealtimeContractTests -- RunConfiguration.TreatNoTestsAsError=true
