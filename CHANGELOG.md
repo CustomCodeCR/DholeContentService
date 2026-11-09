@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.5] - 2026-11-08 (F9 review candidate)
+
+- PATCH SemVer global 1.13.14 para excepción F3 en revisión de F9. Mantiene gates formales, flags OFF y prohibición de despliegue hasta verificar staging y durabilidad.
+
+
 ## [1.3.4] - 2026-11-08 (candidate F3)
 
 - PATCH de versión global 1.13.13 por validación WSS automatizada en Gateway. Sin cambios funcionales en Content ni despliegue.
