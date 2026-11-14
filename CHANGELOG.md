@@ -1,3 +1,8 @@
+## [1.5.0] - 2026-11-14 (API Manager discovery)
+
+- MINOR: catálogo interno de rutas de Content protegido por JWT y alcance integrations.thirdparty.manage.
+- Global Dhole 1.56.0, preserva CMS, multimedia y realtime.
+
 # Changelog
 
 ## [1.4.0] - 2026-11-09 (NotificationsHub universal realtime pilot; candidate)
