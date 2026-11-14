@@ -1,3 +1,8 @@
+## [1.5.0] - 2026-11-14 (API Manager REST inventory)
+
+- MINOR: inventario seguro de Content, sin alterar CMS ni servicios realtime.
+- Ecosistema 1.56.0.
+
 # Changelog
 
 ## [1.2.1] - 2026-11-05
